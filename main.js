@@ -25,11 +25,7 @@ import {exampleSetup} from "prosemirror-example-setup"
 // https://discuss.prosemirror.net/t/handling-focus-in-plugins/1981/6
 //import { focusPlugin } from "./discuss.prosemirror.net/focus-plugin.js"
 
-import { ModTrack, amendTransaction } from "./github.com/fiduswriter/fiduswriter/fiduswriter/document/static/js/modules/editor/track/index.js"
-import { trackPlugin } from "./github.com/fiduswriter/fiduswriter/fiduswriter/document/static/js/modules/editor/state_plugins"
-import * as TrackSchema from "./github.com/fiduswriter/fiduswriter/fiduswriter/document/static/js/modules/schema/common/track.js"
-import { buildEditorKeymap } from "./github.com/fiduswriter/fiduswriter/fiduswriter/document/static/js/modules/editor/keymap"
-import { docSchema } from "./github.com/fiduswriter/fiduswriter/fiduswriter/document/static/js/modules/schema/document"
+//import { docSchema } from "./github.com/fiduswriter/fiduswriter/fiduswriter/document/static/js/modules/schema/document"
 
 import { buildKeymap } from "prosemirror-example-setup"
 import { baseKeymap } from "prosemirror-commands"
@@ -47,11 +43,6 @@ class TextEditor {
       nodes: schema.spec.nodes,
       marks: {
         ...schema.spec.marks,
-
-        insertion: TrackSchema.insertion,
-        deletion: TrackSchema.deletion,
-        format_change: TrackSchema.format_change,
-        // TODO function TrackSchema.parseTracks ?
       },
     })
 
@@ -64,14 +55,11 @@ class TextEditor {
     // fiduswriter statePlugins are inited in fiduswriter/document/static/js/modules/editor/collab/doc.js
     this.plugins = [];
 
-    this.plugins.push(keymap(buildEditorKeymap(this.schema))); // needed for deletions -> setMeta('inputType'
     this.plugins.push(keymap(buildKeymap(this.schema)));
     this.plugins.push(keymap(baseKeymap));
 
-    this.plugins.push(trackPlugin({editor: this}));
-
     var examplePlugins = exampleSetup({
-      schema: docSchema,
+      //schema: docSchema,
       menuBar: true,
       floatingMenu: true,
     }).filter(p => ( // remove key handlers [quickfix]
@@ -100,7 +88,7 @@ class TextEditor {
     this.docInfo = {};
     this.docInfo.updated = null;
     this.docInfo.access_rights = 'write-tracked'; // enable "track changes" for amend_transaction.js
-    this.schema = docSchema
+    //this.schema = docSchema
     this.view = new EditorView(
       editorElement, {
       state: EditorState.create({
@@ -120,37 +108,11 @@ class TextEditor {
           }
         }
       },
-      dispatchTransaction: tr => {
-        //console.log(`TextEditor dispatchTransaction`)
-        const trackedTr = amendTransaction(tr, this.view.state, this)
-        const {state: newState, transactions} = this.view.state.applyTransaction(trackedTr)
-        this.view.updateState(newState)
-        /*
-        transactions.forEach(subTr => {
-          const footTr = subTr.getMeta('footTr')
-          if (footTr) {
-            this.mod.footnotes.fnEditor.view.dispatch(footTr)
-          }
-        })
-        */
-        if (tr.steps) {
-          this.docInfo.updated = new Date()
-        }
-        //this.mod.collab.doc.sendToCollaborators()
-      }
     })
     this.currentView = this.view
 
     //applyDevTools(this.view);
 
-    // mock footnote editor. needed by trackPlugin
-    // fiduswriter/document/static/js/modules/editor/state_plugins/track/plugin.js
-    this.mod.footnotes = { fnEditor: { view: {
-      dispatch: () => undefined,
-      state: { tr: { setMeta: function () { return this; } } }
-    }}};
-
-    new ModTrack(this);
   }
 }
 

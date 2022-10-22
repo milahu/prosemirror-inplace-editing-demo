@@ -1,36 +1,19 @@
 {
-  "name": "prosemirror-track-changes-demo",
+  "name": "prosemirror-inplace-editing-demo",
   "version": "0.0.0",
-  "license": "CC0-1.0",
-  "__comment": "set max-old-space-size=7200 (7200 MByte RAM) to fix out of memory error on node < 15 https://github.com/vitejs/vite/issues/2433",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "cross-env NODE_OPTIONS=--max-old-space-size=7200 vite build",
+    "build": "vite build",
     "serve": "vite preview"
   },
   "devDependencies": {
-    "rollup-plugin-file-import": "^1.0.0",
-    "rollup-pluginutils": "^2.8.2",
+    "rollup-plugin-file-import": "*",
+    "rollup-pluginutils": "*",
     "vite": "*",
     "cross-env": "*"
   },
   "dependencies": {
-    "@vivliostyle/print": "*",
-    "biblatex-csl-converter": "*",
-    "citeproc-plus": "*",
-    "cropperjs": "*",
-    "diff": "*",
-    "diff-dom": "*",
-    "downloadjs": "*",
-    "fast-deep-equal": "*",
-    "fast-json-patch": "*",
-    "fast-json-stable-stringify": "*",
-    "fastdom": "*",
-    "fix-utf8": "*",
-    "jszip": "*",
-    "mathlive": "*",
-    "orderedmap": "*",
-    "pretty": "*",
     "prosemirror-changeset": "*",
     "prosemirror-collab": "*",
     "prosemirror-commands": "*",
@@ -48,11 +31,6 @@
     "prosemirror-suggestions": "*",
     "prosemirror-tables": "*",
     "prosemirror-transform": "*",
-    "prosemirror-view": "*",
-    "rfc6902": "*",
-    "simple-datatables": "*",
-    "sortablejs": "*",
-    "tokenfield": "*",
-    "w3c-keyname": "*"
+    "prosemirror-view": "*"
   }
 }
