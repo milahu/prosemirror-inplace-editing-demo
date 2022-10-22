@@ -37,7 +37,7 @@ import { keymap } from 'prosemirror-keymap'
 
 
 
-class TextEditor {
+export class TextEditor {
 
   constructor() {
 
@@ -121,6 +121,8 @@ class TextEditor {
   }
 }
 
+/*
 document.body.onload = function () {
   new TextEditor();
 }
+*/

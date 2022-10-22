@@ -8,6 +8,7 @@
   </head>
   <body>
     <div id="app">
+      <button onClick="loadEditor()">edit</button>
       <!-- http://www.cheeseipsum.co.uk/ -->
       <div id="edit-me">
         <h1>cheese level 1</h1>
@@ -28,6 +29,15 @@
         </p>
       </div>
     </div>
+    <!--
     <script type="module" src="./main.js"></script>
+    -->
+    <script>
+      window.loadEditor = async function loadEditor() {
+        const editor = await import("./main.js");
+        //console.dir(editor)
+        new editor.TextEditor();
+      }
+    </script>
   </body>
 </html>
