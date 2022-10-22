@@ -37,7 +37,7 @@ https://docs.yjs.dev/ecosystem/editor-bindings/prosemirror
 
 ---
 
-https://docs.yjs.dev/ecosystem/database-provider/y-indexeddb - docs website is broken? fails to load for me ...
+https://docs.yjs.dev/ecosystem/database-provider/y-indexeddb
 
 https://github.com/search?q=IndexeddbPersistence+y-prosemirror&type=code
 
