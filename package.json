@@ -8,10 +8,10 @@
     "serve": "vite preview"
   },
   "devDependencies": {
+    "cross-env": "*",
     "rollup-plugin-file-import": "*",
     "rollup-pluginutils": "*",
-    "vite": "*",
-    "cross-env": "*"
+    "vite": "*"
   },
   "dependencies": {
     "prosemirror-changeset": "*",
