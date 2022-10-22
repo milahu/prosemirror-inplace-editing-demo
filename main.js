@@ -1,5 +1,7 @@
 // prosemirror "track changes" demo with fiduswriter ModTrack
 
+// https://prosemirror.net/examples/basic/
+
 // TODO allow to undelete a selected deletion ("random access undo")
 
 import './style.css' // minimal css for fiduswriter ModTrack
@@ -11,10 +13,12 @@ import "prosemirror-view/style/prosemirror.css" // set white-space: pre-wrap, et
 import "prosemirror-menu/style/menu.css"
 import "prosemirror-example-setup/style/style.css" // .ProseMirror-prompt, etc
 
+
 import {EditorState, Plugin} from "prosemirror-state"
 import {EditorView} from "prosemirror-view"
 import {Schema, DOMParser} from "prosemirror-model"
 import {schema} from "prosemirror-schema-basic"
+import {addListNodes} from "prosemirror-schema-list"
 import {exampleSetup} from "prosemirror-example-setup"
 
 //import applyDevTools from "prosemirror-dev-tools";
@@ -39,33 +43,35 @@ class TextEditor {
 
     this.docSource = document.querySelector('#edit-me');
 
-    const customSchema = new Schema({
-      nodes: schema.spec.nodes,
-      marks: {
-        ...schema.spec.marks,
-      },
+    // Mix the nodes from prosemirror-schema-list into the basic schema to
+    // create a schema with list support.
+    this.schema = new Schema({
+      nodes: addListNodes(schema.spec.nodes, "paragraph block*", "block"),
+      marks: schema.spec.marks
     })
-
-    this.schema = {
-      //...schema,
-      //...docSchema,
-      ...customSchema,
-    }
 
     // fiduswriter statePlugins are inited in fiduswriter/document/static/js/modules/editor/collab/doc.js
     this.plugins = [];
 
+    // TODO why?
+    /*
     this.plugins.push(keymap(buildKeymap(this.schema)));
     this.plugins.push(keymap(baseKeymap));
+    */
 
     var examplePlugins = exampleSetup({
-      //schema: docSchema,
+      schema: this.schema,
       menuBar: true,
       floatingMenu: true,
-    }).filter(p => ( // remove key handlers [quickfix]
+    })
+
+    /* TODO why?
+    examplePlugins = examplePlugins.filter(p => ( // remove key handlers [quickfix]
       !Boolean(p.props?.handleKeyDown) &&
       !Boolean(p.props?.handleTextInput)
     ));
+    */
+
     this.plugins.push(...examplePlugins);
     //console.log('TextEditor examplePlugins', examplePlugins);
 
@@ -89,8 +95,7 @@ class TextEditor {
     this.docInfo.updated = null;
     this.docInfo.access_rights = 'write-tracked'; // enable "track changes" for amend_transaction.js
     //this.schema = docSchema
-    this.view = new EditorView(
-      editorElement, {
+    this.view = new EditorView(editorElement, {
       state: EditorState.create({
         doc: DOMParser.fromSchema(this.schema).parse(this.docSource),
         plugins: this.plugins,
