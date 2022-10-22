@@ -5,10 +5,62 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>track changes demo with prosemirror and fiduswriter ModTrack</title>
+
+    <!-- https://github.com/ProseMirror/website/blob/master/example/track/index.html -->
+    <style>
+      .commit {
+        margin-bottom: 4px;
+      }
+      .commit:hover {
+        background: #ff8;
+      }
+      .commit-revert {
+        color: #a22;
+      }
+      .commit-time {
+        background: #5ab;
+        padding: 0 5px;
+        color: white;
+        font-size: 90%;
+      }
+      .commit-blame {
+        background: #ff8;
+      }
+      .blame-info {
+        position: fixed;
+        border: 1px solid silver;
+        background: white;
+        padding: 3px 8px;
+        z-index: 3;
+      }
+      .blame-wrap {
+        position: absolute;
+        right: 0;
+        top: 0;
+      }
+      #commit {
+        margin: 6px 0;
+        position: relative;
+      }
+      .blame-marker {
+        background: #ff8;
+      }
+    </style>
+
+
   </head>
   <body>
     <div id="app">
       <button onClick="loadEditor()">edit</button>
+      <button onClick="saveEditor()">save</button>
+
+      <form id="commit">
+        Commit message: <input type=text id=message name=message> <button id=commitbutton type="submit">commit</button>
+          <div class=blame-wrap><button type=button id=blame>blame at cursor</button></div>
+      </form>
+
+      <div id="commits" style="margin-bottom: 23px"></div>
+
       <!-- http://www.cheeseipsum.co.uk/ -->
       <div id="edit-me">
         <h1>cheese level 1</h1>
@@ -34,10 +86,16 @@
     -->
     <script>
       window.loadEditor = async function loadEditor() {
-        const editor = await import("./main.js");
+        console.time("loading main.js")
+        const {TextEditor} = await import("./main.js")
+        console.timeEnd("loading main.js")
         //console.dir(editor)
-        new editor.TextEditor(document.querySelector('#edit-me'));
+        console.time("loading editor")
+        const editor = new TextEditor(document.querySelector('#edit-me'))
+        console.timeEnd("loading editor")
+        window.saveEditor = () => editor.save()
       }
+      window.saveEditor = () => alert("editor not loaded")
     </script>
   </body>
 </html>
