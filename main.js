@@ -24,7 +24,7 @@ prosemirror plugin for tracking the state of a ProseMirror document over time,
 and utilities for dealing with the data from that plugin.
 */
 //import trackPlugin, { getTrackPluginState } from "@manuscripts/track-changes"
-import * as TrackPlugin from "@manuscripts/track-changes"
+//import * as TrackPlugin from "@manuscripts/track-changes"
 
 
 
