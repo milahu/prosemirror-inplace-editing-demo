@@ -78,6 +78,35 @@ import { keymap } from 'prosemirror-keymap'
 
 
 
+// https://github.com/yjs/y-prosemirror
+// https://github.com/yjs/yjs-demos/blob/main/prosemirror/prosemirror.js
+import * as Y from 'yjs'
+//import { WebsocketProvider } from 'y-websocket'
+import { ySyncPlugin, yCursorPlugin, yUndoPlugin, undo, redo } from 'y-prosemirror'
+// https://docs.yjs.dev/ecosystem/database-provider/y-indexeddb
+import { IndexeddbPersistence, storeState } from 'y-indexeddb'
+
+/*
+// https://github.com/yjs/website/blob/master/src/sharedTypes.js
+const docName = 'hello.html'
+const ydoc = new Y.Doc()
+const persistence = new IndexeddbPersistence(docName, ydoc)
+export const versionType = ydoc.getArray('versions')
+
+persistence.on('synced', () => {
+  lastSnapshot = versionType.length > 0 ? Y.decodeSnapshot(versionType.get(0).snapshot) : Y.emptySnapshot
+  versionType.observe(() => {
+    if (versionType.length > 0) {
+      const nextSnapshot = Y.decodeSnapshot(versionType.get(0).snapshot)
+      undoManager.clear()
+      Y.tryGc(nextSnapshot.ds, doc.store, gcFilter)
+      lastSnapshot = nextSnapshot
+      storeState(indexeddbPersistence)
+    }
+  })
+})
+*/
+
 /*
 track changes
 https://github.com/ProseMirror/website/blob/master/example/track/index.js
@@ -143,6 +172,48 @@ export class TextEditor {
 
     this.plugins.push(trackPlugin)
     this.plugins.push(highlightPlugin)
+
+    this.documentName = "test.html"
+
+    // https://github.com/yjs/y-prosemirror
+    this.document = new Y.Doc()
+
+    // TODO backend server
+    //const provider = new WebsocketProvider('wss://demos.yjs.dev', this.documentName, this.document)
+
+    // https://github.com/pamphlets/editorial/blob/master/index.js
+    // note: this.indexeddbPersistence is not used
+    this.indexeddbPersistence = new IndexeddbPersistence(this.documentName, this.document)
+    this.indexeddbPersistence.on('synced', () => {
+      console.log('content from the database is loaded')
+    })
+
+    const yXmlFragment = this.document.getXmlFragment('prosemirror')
+    //const yXmlFragment = ydocument.get('prosemirror', Y.XmlFragment)
+
+    this.plugins.push(...[
+        ySyncPlugin(yXmlFragment),
+        //yCursorPlugin(provider.awareness),
+        yUndoPlugin(),
+        keymap({
+          'Mod-z': undo,
+          'Mod-y': redo,
+          'Mod-Shift-z': redo
+        })
+    ])
+
+    /*
+    const connectBtn = /** @type {HTMLElement} *xxxxxx/ (document.getElementById('y-connect-btn'))
+    connectBtn.addEventListener('click', () => {
+      if (provider.shouldConnect) {
+        provider.disconnect()
+        connectBtn.textContent = 'Connect'
+      } else {
+        provider.connect()
+        connectBtn.textContent = 'Disconnect'
+      }
+    })
+    */
 
     // replace document with editor
     const editorElement = document.createElement('div');
@@ -232,7 +303,7 @@ export class TextEditor {
     }
 
     this.changes.renderCommits = () => {
-      console.log("dispatchTransaction: this.changes", this.changes)
+      //console.log("dispatchTransaction: this.changes", this.changes)
       let curState = trackPlugin.getState(this.state)
       if (this.lastRendered == curState) return
       this.lastRendered = curState

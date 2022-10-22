@@ -31,6 +31,10 @@
     "prosemirror-suggestions": "*",
     "prosemirror-tables": "*",
     "prosemirror-transform": "*",
-    "prosemirror-view": "*"
+    "prosemirror-view": "*",
+    "y-indexeddb": "^9.0.9",
+    "y-prosemirror": "^1.2.0",
+    "y-protocols": "^1.0.5",
+    "yjs": "^13.5.42"
   }
 }
