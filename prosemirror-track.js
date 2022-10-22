@@ -113,7 +113,7 @@ function insertIntoBlameMap(map, from, to, commit) {
 // trackPlugin{
 import {Plugin} from "prosemirror-state"
 
-const trackPlugin = new Plugin({
+export const trackPlugin = new Plugin({
   state: {
     init(_, instance) {
       return new TrackState([new Span(0, instance.doc.content.size, null)], [], [], [])
@@ -143,7 +143,7 @@ function elt(name, attrs, ...children) {
   return dom
 }
 
-const highlightPlugin = new Plugin({
+export const highlightPlugin = new Plugin({
   state: {
     init() { return {deco: DecorationSet.empty, commit: null} },
     apply(tr, prev, oldState, state) {
@@ -168,6 +168,7 @@ const highlightPlugin = new Plugin({
   }
 })
 
+/*
 let state = EditorState.create({
   schema,
   plugins: exampleSetup({schema}).concat(trackPlugin, highlightPlugin)
@@ -289,3 +290,4 @@ document.querySelector("#blame").addEventListener("mousedown", e => {
   document.body.appendChild(node)
   setTimeout(() => document.body.removeChild(node), 2000)
 })
+*/
