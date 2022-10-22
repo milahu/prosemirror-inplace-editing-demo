@@ -36,7 +36,7 @@
       window.loadEditor = async function loadEditor() {
         const editor = await import("./main.js");
         //console.dir(editor)
-        new editor.TextEditor();
+        new editor.TextEditor(document.querySelector('#edit-me'));
       }
     </script>
   </body>

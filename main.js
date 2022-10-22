@@ -39,9 +39,9 @@ import { keymap } from 'prosemirror-keymap'
 
 export class TextEditor {
 
-  constructor() {
+  constructor(contentElement) {
 
-    this.docSource = document.querySelector('#edit-me');
+    this.docSource = contentElement || document.querySelector('#content');
 
     // Mix the nodes from prosemirror-schema-list into the basic schema to
     // create a schema with list support.
