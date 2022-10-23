@@ -1,7 +1,18 @@
 import logo from './logo.svg';
 import styles from './App.module.css';
+import { QueryClient, QueryClientProvider, createQuery } from '@tanstack/solid-query'
+
+const queryClient = new QueryClient()
 
 function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Main/>
+    </QueryClientProvider>
+  )
+}
+
+function Main() {
   return (
     <div class={styles.App}>
       <header class={styles.header}>
