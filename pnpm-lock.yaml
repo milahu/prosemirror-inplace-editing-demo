@@ -2,11 +2,10 @@ lockfileVersion: 5.4
 
 specifiers:
   '@milahu/patch-package': ^6.4.14
-  '@octokit/core': ^4.1.0
-  '@octokit/request': ^6.2.2
   '@octokit/rest': ^19.0.5
   '@tanstack/query-core': 4.13.0
   '@tanstack/query-persist-client-core': 4.13.0
+  '@tanstack/react-query': ^4.13.0
   '@tanstack/react-query-persist-client': ^4.13.0
   '@tanstack/solid-query': 4.13.0
   idb-keyval: ^6.2.0
@@ -20,12 +19,11 @@ dependencies:
 
 devDependencies:
   '@milahu/patch-package': 6.4.14
-  '@octokit/core': 4.1.0
-  '@octokit/request': 6.2.2
   '@octokit/rest': 19.0.5
   '@tanstack/query-core': 4.13.0
   '@tanstack/query-persist-client-core': 4.13.0_2j3mimmrnvztipmcuhvp72grqa
-  '@tanstack/react-query-persist-client': 4.13.0_2j3mimmrnvztipmcuhvp72grqa
+  '@tanstack/react-query': 4.13.0
+  '@tanstack/react-query-persist-client': 4.13.0_36jzavckwlmcrebxlve4t4paya
   '@tanstack/solid-query': 4.13.0_solid-js@1.6.0
   idb-keyval: 6.2.0
   isomorphic-fetch: 3.0.0
@@ -553,14 +551,31 @@ packages:
       '@tanstack/query-core': 4.13.0
     dev: true
 
-  /@tanstack/react-query-persist-client/4.13.0_2j3mimmrnvztipmcuhvp72grqa:
+  /@tanstack/react-query-persist-client/4.13.0_36jzavckwlmcrebxlve4t4paya:
     resolution: {integrity: sha512-jzCFGi5PZVIPJ+6R3dko20iYRutpFjgn34PvwbvnJsAjIeZywU9wmFj0+V1tpUfyVxLCe/ZaII/o9OzwG3qHjQ==}
     peerDependencies:
       '@tanstack/react-query': 4.13.0
     dependencies:
       '@tanstack/query-persist-client-core': 4.13.0_2j3mimmrnvztipmcuhvp72grqa
+      '@tanstack/react-query': 4.13.0
     transitivePeerDependencies:
       - '@tanstack/query-core'
+    dev: true
+
+  /@tanstack/react-query/4.13.0:
+    resolution: {integrity: sha512-dI/5hJ/pGQ74P5hxBLC9h6K0/Cap2T3k0ZjjjFLBCNnohDYgl7LNmMopzrRzBHk2mMjf2hgXHIzcKNG8GOZ5hg==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-native: '*'
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
+      react-native:
+        optional: true
+    dependencies:
+      '@tanstack/query-core': 4.13.0
+      use-sync-external-store: 1.2.0
     dev: true
 
   /@tanstack/solid-query/4.13.0_solid-js@1.6.0:
@@ -1367,6 +1382,12 @@ packages:
       browserslist: 4.21.4
       escalade: 3.1.1
       picocolors: 1.0.0
+    dev: true
+
+  /use-sync-external-store/1.2.0:
+    resolution: {integrity: sha512-eEgnFxGQ1Ife9bzYs6VLi8/4X6CObHMw9Qr9tPY43iKwsPw8xE8+EFsf/2cFZ5S3esXgpWgtSCtLNS41F+sKPA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
     dev: true
 
   /vite-plugin-solid/2.3.10_solid-js@1.6.0+vite@3.1.8:
