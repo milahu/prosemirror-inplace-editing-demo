@@ -1,20 +1,30 @@
 {
-  "name": "vite-template-solid",
+  "name": "prosemirror-inplace-editing-demo",
   "version": "0.0.0",
-  "description": "",
+  "description": "inplace editable web pages, contribute changes back to github",
   "scripts": {
+    "postinstall": "patch-package",
     "start": "vite",
     "dev": "vite",
+    "devloop": "./scripts/devloop.sh",
     "build": "vite build",
     "serve": "vite preview"
   },
   "license": "MIT",
+  "author": "milahu",
   "devDependencies": {
-    "@tanstack/solid-query": "^4.13.0",
-    "vite": "^3.0.9",
-    "vite-plugin-solid": "^2.3.0"
+    "@milahu/patch-package": "^6.4.14",
+    "@octokit/rest": "^19.0.5",
+    "@tanstack/query-core": "4.13.0",
+    "@tanstack/query-persist-client-core": "4.13.0",
+    "@tanstack/react-query-persist-client": "^4.13.0",
+    "@tanstack/solid-query": "4.13.0",
+    "idb-keyval": "^6.2.0",
+    "isomorphic-fetch": "^3.0.0",
+    "vite": "^3.1.8",
+    "vite-plugin-solid": "^2.3.10"
   },
   "dependencies": {
-    "solid-js": "^1.5.1"
+    "solid-js": "^1.6.0"
   }
 }
