@@ -3,6 +3,21 @@
 # declared package:
 #   @tanstack/query-core: 4.13.0
 #
+diff --git a/node_modules/@tanstack/query-core/build/lib/query.esm.js b/node_modules/@tanstack/query-core/build/lib/query.esm.js
+index d425e30..2b541f0 100644
+--- a/node_modules/@tanstack/query-core/build/lib/query.esm.js
++++ b/node_modules/@tanstack/query-core/build/lib/query.esm.js
+@@ -26,7 +26,10 @@ class Query extends Removable {
+       ...options
+     };
+     this.meta = options == null ? void 0 : options.meta;
++    console.log('Query.setOptions this.options', this.options)
++    console.log('Query.setOptions this.options.cacheTime', this.options.cacheTime)
+     this.updateCacheTime(this.options.cacheTime);
++    console.log('Query.setOptions this.cacheTime', this.cacheTime)
+   }
+ 
+   optionalRemove() {
 diff --git a/node_modules/@tanstack/query-core/build/lib/queryObserver.esm.js b/node_modules/@tanstack/query-core/build/lib/queryObserver.esm.js
 index 7a9d8b4..55dd6d4 100644
 --- a/node_modules/@tanstack/query-core/build/lib/queryObserver.esm.js
@@ -63,6 +78,18 @@ index 7a9d8b4..55dd6d4 100644
        this.client.getQueryCache().notify({
          type: 'observerOptionsUpdated',
          query: this.currentQuery,
+@@ -79,10 +117,10 @@ class QueryObserver extends Subscribable {
+     const mounted = this.hasListeners(); // Fetch if there are subscribers
+ 
+     if (mounted && shouldFetchOptionally(this.currentQuery, prevQuery, this.options, prevOptions)) {
++
+       this.executeFetch();
+     } // Update result
+ 
+-
+     this.updateResult(notifyOptions); // Update stale interval if needed
+ 
+     if (mounted && (this.currentQuery !== prevQuery || this.options.enabled !== prevOptions.enabled || this.options.staleTime !== prevOptions.staleTime)) {
 @@ -158,6 +196,9 @@ class QueryObserver extends Subscribable {
    }
  
@@ -83,6 +110,10 @@ index 82754c4..174f766 100644
  
 -function shallowEqualObjects(a, b) {
 +function shallowEqualObjects(a, b, skipKeys = []) {
++
++// trace
++//console.log('shallowEqualObjects', new Error().stack)
++
    if (a && !b || b && !a) {
 +    console.log(`@tanstack/query-core/build/lib/utils.esm.js shallowEqualObjects: diff boolean: a`, a)
 +    console.log(`@tanstack/query-core/build/lib/utils.esm.js shallowEqualObjects: diff boolean: b`, b)
