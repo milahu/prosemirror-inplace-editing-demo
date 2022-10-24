@@ -26,12 +26,12 @@ node_modules/@tanstack/query-persist-client-core/build/lib/persist.esm.js
 
 
 
-import { createContext, mergeProps, onMount, onCleanup } from 'solid-js';
+import { createContext, mergeProps, createSignal, onMount, onCleanup } from 'solid-js';
 
 // node_modules/@tanstack/query-persist-client-core/build/lib/persist.esm.js
-import { persistQueryClientSubscribe, persistQueryClientRestore } from "@tanstack/query-persist-client-core"
+import { persistQueryClient, persistQueryClientSubscribe, persistQueryClientRestore } from "@tanstack/query-persist-client-core"
 
-import { defaultContext } from "@tanstack/solid-query"
+import { defaultContext, IsRestoringProvider, IsRestoringContext } from "@tanstack/solid-query"
 
 
 
@@ -49,6 +49,7 @@ const QueryClientSharingContext = createContext(false); // If we are given a con
 // different bundles or microfrontends they will
 // all use the same **instance** of context, regardless
 // of module scoping.
+
 
 
 
@@ -75,7 +76,13 @@ export const PersistQueryClientProvider = (props) => {
         contextSharing: false,
     }, props);
 
-    let persistQueryClientUnsubscribe
+    //let unsubscribe
+
+    //const [isRestoring, setIsRestoring] = React.useState(true)
+    const [isRestoring, setIsRestoring] = createSignal(true) // closest to react version
+    //const [isRestoring, setIsRestoring] = useIsRestoring(); setIsRestoring(true)
+
+    let isStale = false
 
     //onMount(() => {
       // same as in non-persisted provider
@@ -92,17 +99,27 @@ export const PersistQueryClientProvider = (props) => {
       // https://github.com/TanStack/query/discussions/4365
       mergedProps.queryClient = mergedProps.client
 
+      const [unsubscribe, restorePromise] = persistQueryClient(mergedProps)
+
+      restorePromise.then(() => {
+        console.log('tanstack-solid-query-persist-client.jsx restorePromise done')
+        if (!isStale) {
+          mergedProps.onSuccess?.() // TODO remove? only in react?
+          console.log('tanstack-solid-query-persist-client.jsx restorePromise done: setIsRestoring(false)')
+          setIsRestoring(false)
+        }
+      })
+
       // restore old queries
-      persistQueryClientRestore(mergedProps)
+      //persistQueryClientRestore(mergedProps)
 
       // subscribe
-      // FIXME restoreClient is never called
-      console.log('PersistQueryClientProvider.onMount: subscribe')
-      persistQueryClientUnsubscribe =
-      persistQueryClientSubscribe(mergedProps)
+      //console.log('PersistQueryClientProvider: subscribe')
+      //unsubscribe =
+      //persistQueryClientSubscribe(mergedProps)
 
       // test: mount later
-      //console.log('PersistQueryClientProvider.onMount: mount')
+      //console.log('PersistQueryClientProvider: mount')
       //mergedProps.client.mount()
     //});
 
@@ -112,18 +129,31 @@ export const PersistQueryClientProvider = (props) => {
       mergedProps.client.unmount()
 
       // persistence ...
+      isStale = true
 
       //console.log('PersistQueryClientProvider.onCleanup: unsubscribe')
       // unsubscribe
-      persistQueryClientUnsubscribe()
+      unsubscribe()
     })
 
     const QueryClientContext = getQueryClientContext(mergedProps.context, mergedProps.contextSharing);
 
+/*
+IsRestoringProvider
+https://github.com/TanStack/query/blob/main/packages/react-query-persist-client/src/PersistQueryClientProvider.tsx
+
+not reactive
+          <IsRestoringContext.Provider value={isRestoring()}>
+          <IsRestoringContext.Provider value={() => isRestoring()}>
+
+*/
+
     return (
       <QueryClientSharingContext.Provider value={!mergedProps.context && mergedProps.contextSharing}>
         <QueryClientContext.Provider value={mergedProps.client}>
-          {mergedProps.children}
+          <IsRestoringContext.Provider value={isRestoring}>
+            {mergedProps.children}
+          </IsRestoringContext.Provider>
         </QueryClientContext.Provider>
       </QueryClientSharingContext.Provider>
     );

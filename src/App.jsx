@@ -1,3 +1,4 @@
+
 import logo from './logo.svg';
 import styles from './App.module.css';
 
@@ -33,6 +34,10 @@ const octokit = new Octokit({
   userAgent: 'milahu/prosemirror-inplace-editing-demo 0.0.0',
 })
 
+/*
+      <GithubFile path="file2"/>
+*/
+
 function App() {
   const persister = createIDBPersister()
   return (
@@ -45,7 +50,6 @@ function App() {
         this means that the cache is used = no refetching is done
       </div>
       <GithubFile path="file1"/>
-      <GithubFile path="file2"/>
     </PersistQueryClientProvider>
   )
 }
@@ -97,7 +101,10 @@ function GithubFile(props) {
 
       // any previous data will be kept when fetching new data because the query key changed.
       // example: this Query is part of a paginated component
-      keepPreviousData: true,
+      //keepPreviousData: true,
+      // guess: this will set query.state.dataUpdatedAt ?
+
+      //retryOnMount: true,
 
       // Defaults to 5 * 60 * 1000 (5 minutes) or Infinity during SSR
       // The time in milliseconds that unused/inactive cache data remains in memory. When a query's cache becomes unused or inactive, that cache data will be garbage collected after this duration. When different cache times are specified, the longest one will be used.
@@ -119,14 +126,17 @@ function GithubFile(props) {
       //   return shouldFetchOn(this.currentQuery, this.options, this.options.refetchOnWindowFocus);
       // }
       refetchOnWindowFocus: false,
+      //refetchOnWindowFocus: true, // default true!
    
       // @tanstack/query-core/build/lib/queryObserver.esm.js
       // function shouldFetchOnMount(query, options) {
       //   return shouldLoadOnMount(query, options) || query.state.dataUpdatedAt > 0 && shouldFetchOn(query, options, options.refetchOnMount);
       // }
-      refetchOnMount: false,
+      //refetchOnMount: false,
+      refetchOnMount: true,
 
-      refetchOnReconnect: false,
+      //refetchOnReconnect: false,
+      refetchOnReconnect: true,
     }
   )
 
