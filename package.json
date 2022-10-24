@@ -7,7 +7,7 @@
     "start": "vite",
     "dev": "vite --clearScreen false",
     "devloop": "./scripts/devloop.sh",
-    "build": "vite build",
+    "build": "vite build && touch docs/.nojekyll",
     "serve": "vite preview"
   },
   "license": "MIT",
