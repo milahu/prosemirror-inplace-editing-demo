@@ -4,10 +4,10 @@
 #   @tanstack/query-core: 4.13.0
 #
 diff --git a/node_modules/@tanstack/query-core/build/lib/queryObserver.esm.js b/node_modules/@tanstack/query-core/build/lib/queryObserver.esm.js
-index 7a9d8b4..0c05185 100644
+index 7a9d8b4..55dd6d4 100644
 --- a/node_modules/@tanstack/query-core/build/lib/queryObserver.esm.js
 +++ b/node_modules/@tanstack/query-core/build/lib/queryObserver.esm.js
-@@ -25,7 +25,36 @@ class QueryObserver extends Subscribable {
+@@ -25,7 +25,39 @@ class QueryObserver extends Subscribable {
        this.currentQuery.addObserver(this);
  
        if (shouldFetchOnMount(this.currentQuery, this.options)) {
@@ -19,12 +19,15 @@ index 7a9d8b4..0c05185 100644
 +        // https://github.com/TanStack/query/discussions/4365
 +        const queryClient = this.client
 +
++
 +        if (!queryClient.paused) {
 +          // fetch now
++          console.log('QueryObserver.onSubscribe: fetch now')
 +          this.executeFetch();
 +        }
 +        else {
 +          // queryClient is paused -> fetch later
++          console.log('QueryObserver.onSubscribe: queryClient is paused -> fetch later')
 +          //console.log('QueryObserver.onSubscribe: queryClient is paused -> fetch later')
 +          if (!queryClient.afterPersistQueryClientRestore) {
 +            queryClient.afterPersistQueryClientRestore = []
@@ -33,11 +36,11 @@ index 7a9d8b4..0c05185 100644
 +          queryClient.afterPersistQueryClientRestore.push(() => {
 +            // check again
 +            if (shouldFetchOnMount(this.currentQuery, this.options)) {
-+              //console.log('QueryObserver.onSubscribe after restore: executeFetch')
++              console.log('QueryObserver.onSubscribe after restore: executeFetch')
 +              this.executeFetch();
 +            }
 +            else {
-+              //console.log('QueryObserver.onSubscribe after restore: dont executeFetch')
++              console.log('QueryObserver.onSubscribe after restore: dont executeFetch')
 +            }
 +          })
 +        }
@@ -45,3 +48,59 @@ index 7a9d8b4..0c05185 100644
        }
  
        this.updateTimers();
+@@ -58,7 +90,13 @@ class QueryObserver extends Subscribable {
+     const prevQuery = this.currentQuery;
+     this.options = this.client.defaultQueryOptions(options);
+ 
+-    if (!shallowEqualObjects(prevOptions, this.options)) {
++    // exclude queryKey from comparision
++    // workaround for solidjs
++    // where queryKey is a Proxy array
++    // which can contain nested Proxy objects and arrays
++    // TODO better
++    // queryKey should not contain Proxy objects
++    if (!shallowEqualObjects(prevOptions, this.options, ["queryKey"])) {
+       this.client.getQueryCache().notify({
+         type: 'observerOptionsUpdated',
+         query: this.currentQuery,
+@@ -158,6 +196,9 @@ class QueryObserver extends Subscribable {
+   }
+ 
+   executeFetch(fetchOptions) {
++
++    console.log('QueryObserver.executeFetch: executeFetch', new Error().stack)
++
+     // Make sure we reference the latest query as the current one might have been removed
+     this.updateQuery(); // Fetch
+ 
+diff --git a/node_modules/@tanstack/query-core/build/lib/utils.esm.js b/node_modules/@tanstack/query-core/build/lib/utils.esm.js
+index 82754c4..174f766 100644
+--- a/node_modules/@tanstack/query-core/build/lib/utils.esm.js
++++ b/node_modules/@tanstack/query-core/build/lib/utils.esm.js
+@@ -227,17 +227,29 @@ function replaceEqualDeep(a, b) {
+  * Shallow compare objects. Only works with objects that always have the same properties.
+  */
+ 
+-function shallowEqualObjects(a, b) {
++function shallowEqualObjects(a, b, skipKeys = []) {
+   if (a && !b || b && !a) {
++    console.log(`@tanstack/query-core/build/lib/utils.esm.js shallowEqualObjects: diff boolean: a`, a)
++    console.log(`@tanstack/query-core/build/lib/utils.esm.js shallowEqualObjects: diff boolean: b`, b)
+     return false;
+   }
+ 
+   for (const key in a) {
++    // NOTE(milahu): need this to ignore queryKey with Proxy objects in solidjs
++    if (skipKeys && skipKeys.includes(key)) continue
+     if (a[key] !== b[key]) {
++      console.log(`@tanstack/query-core/build/lib/utils.esm.js shallowEqualObjects: diff key: a.${key}`, a[key])
++      console.log(`@tanstack/query-core/build/lib/utils.esm.js shallowEqualObjects: diff key: b.${key}`, b[key])
+       return false;
+     }
+   }
+ 
++  console.log(`@tanstack/query-core/build/lib/utils.esm.js shallowEqualObjects: equal`)
++
+   return true;
+ }
+ function isPlainArray(value) {
