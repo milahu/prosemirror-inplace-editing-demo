@@ -11,3 +11,7 @@ cd prosemirror-inplace-editing-demo/
 pnpm install 
 npm run dev 
 ```
+
+## related
+
+based on [prosemirror-track-changes-demo](https://github.com/milahu/prosemirror-track-changes-demo)
