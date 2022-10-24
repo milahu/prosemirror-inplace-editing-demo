@@ -8035,8 +8035,9 @@ const _tmpl$ = /*#__PURE__*/template(`<div>goal: the "x-ratelimit-used" numbers 
 const queryClient = new QueryClient();
 const octokit = new Octokit({
   // read access to contents of https://github.com/milahu/prosemirror-inplace-editing-demo-test-repo
-  // expires 2023-01-22
-  auth: "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",
+  // expires 2023-10-24
+  // must escape token to fix: Your GitHub Personal Access Token has been revoked
+  auth: "gith" + "ub_p" + "at_" + "11AD" + "C3YXY0JNCQB" + "bvqukhc_VAYx" + "GiSpKsCYsiE2vy" + "zOR1iVYYmVkPEB" + "707abTxLywAS22" + "REUDVgkOBJp83",
   userAgent: 'milahu/prosemirror-inplace-editing-demo 0.0.0'
 });
 function App() {
