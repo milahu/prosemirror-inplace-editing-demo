@@ -16,7 +16,8 @@ const queryClient = new QueryClient()
 
 const octokit = new Octokit({
   // read access to contents of https://github.com/milahu/prosemirror-inplace-editing-demo-test-repo
-  auth: "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",
+  // expires 2023-01-22
+  auth: "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",
   userAgent: 'milahu/prosemirror-inplace-editing-demo 0.0.0',
 })
 
