@@ -1084,13 +1084,7 @@ function replaceEqualDeep(a, b) {
  */
 
 function shallowEqualObjects(a, b, skipKeys = []) {
-
-// trace
-//console.log('shallowEqualObjects', new Error().stack)
-
   if (a && !b || b && !a) {
-    console.log(`@tanstack/query-core/build/lib/utils.esm.js shallowEqualObjects: diff boolean: a`, a);
-    console.log(`@tanstack/query-core/build/lib/utils.esm.js shallowEqualObjects: diff boolean: b`, b);
     return false;
   }
 
@@ -1098,13 +1092,9 @@ function shallowEqualObjects(a, b, skipKeys = []) {
     // NOTE(milahu): need this to ignore queryKey with Proxy objects in solidjs
     if (skipKeys && skipKeys.includes(key)) continue
     if (a[key] !== b[key]) {
-      console.log(`@tanstack/query-core/build/lib/utils.esm.js shallowEqualObjects: diff key: a.${key}`, a[key]);
-      console.log(`@tanstack/query-core/build/lib/utils.esm.js shallowEqualObjects: diff key: b.${key}`, b[key]);
       return false;
     }
   }
-
-  console.log(`@tanstack/query-core/build/lib/utils.esm.js shallowEqualObjects: equal`);
 
   return true;
 }
@@ -1642,10 +1632,7 @@ class Query extends Removable {
       ...options
     };
     this.meta = options == null ? void 0 : options.meta;
-    console.log('Query.setOptions this.options', this.options);
-    console.log('Query.setOptions this.options.cacheTime', this.options.cacheTime);
     this.updateCacheTime(this.options.cacheTime);
-    console.log('Query.setOptions this.cacheTime', this.cacheTime);
   }
 
   optionalRemove() {
@@ -2960,43 +2947,15 @@ class QueryObserver extends Subscribable {
   }
 
   onSubscribe() {
+console.log('QueryObserver.onSubscribe this.listeners', this.listeners);
     if (this.listeners.length === 1) {
       this.currentQuery.addObserver(this);
 
       if (shouldFetchOnMount(this.currentQuery, this.options)) {
 
-        // fetch later if queryClient is paused
+console.log('QueryObserver.onSubscribe executeFetch');
 
-        // TODO sync API prop names
-        // https://github.com/TanStack/query/discussions/4365
-        const queryClient = this.client;
-
-
-        if (!queryClient.paused) {
-          // fetch now
-          console.log('QueryObserver.onSubscribe: fetch now');
-          this.executeFetch();
-        }
-        else {
-          // queryClient is paused -> fetch later
-          console.log('QueryObserver.onSubscribe: queryClient is paused -> fetch later');
-          //console.log('QueryObserver.onSubscribe: queryClient is paused -> fetch later')
-          if (!queryClient.afterPersistQueryClientRestore) {
-            queryClient.afterPersistQueryClientRestore = [];
-          }
-          // fetch later in node_modules/@tanstack/query-persist-client-core/build/lib/persist.esm.js
-          queryClient.afterPersistQueryClientRestore.push(() => {
-            // check again
-            if (shouldFetchOnMount(this.currentQuery, this.options)) {
-              console.log('QueryObserver.onSubscribe after restore: executeFetch');
-              this.executeFetch();
-            }
-            else {
-              console.log('QueryObserver.onSubscribe after restore: dont executeFetch');
-            }
-          });
-        }
-
+        this.executeFetch();
       }
 
       this.updateTimers();
@@ -3029,12 +2988,6 @@ class QueryObserver extends Subscribable {
     const prevQuery = this.currentQuery;
     this.options = this.client.defaultQueryOptions(options);
 
-    // exclude queryKey from comparision
-    // workaround for solidjs
-    // where queryKey is a Proxy array
-    // which can contain nested Proxy objects and arrays
-    // TODO better
-    // queryKey should not contain Proxy objects
     if (!shallowEqualObjects(prevOptions, this.options, ["queryKey"])) {
       this.client.getQueryCache().notify({
         type: 'observerOptionsUpdated',
@@ -3056,9 +3009,9 @@ class QueryObserver extends Subscribable {
     const mounted = this.hasListeners(); // Fetch if there are subscribers
 
     if (mounted && shouldFetchOptionally(this.currentQuery, prevQuery, this.options, prevOptions)) {
-
       this.executeFetch();
     } // Update result
+
 
     this.updateResult(notifyOptions); // Update stale interval if needed
 
@@ -3136,7 +3089,8 @@ class QueryObserver extends Subscribable {
 
   executeFetch(fetchOptions) {
 
-    console.log('QueryObserver.executeFetch: executeFetch', new Error().stack);
+// trace
+console.log('QueryObserver.executeFetch', new Error().stack);
 
     // Make sure we reference the latest query as the current one might have been removed
     this.updateQuery(); // Fetch
@@ -3465,11 +3419,29 @@ class QueryObserver extends Subscribable {
 }
 
 function shouldLoadOnMount(query, options) {
+
+console.log('QueryObserver shouldLoadOnMount: options.enabled', (options.enabled), 'fetch', (options.enabled !== false));
+console.log('QueryObserver shouldLoadOnMount: query.state.dataUpdatedAt', (query.state.dataUpdatedAt), 'fetch', (!query.state.dataUpdatedAt));
+console.log(`QueryObserver shouldLoadOnMount: query.state.status'`, query.state.status, 'fetch', (!(query.state.status === 'error' && options.retryOnMount === false)));
+console.log(`QueryObserver shouldLoadOnMount: options.retryOnMount'`, options.retryOnMount);
+
   return options.enabled !== false && !query.state.dataUpdatedAt && !(query.state.status === 'error' && options.retryOnMount === false);
 }
 
 function shouldFetchOnMount(query, options) {
+
+console.log('QueryObserver shouldFetchOnMount: shouldLoadOnMount', shouldLoadOnMount(query, options));
+console.log(`QueryObserver shouldFetchOnMount: query.state.dataUpdatedAt'`, query.state.dataUpdatedAt, 'fetch', (query.state.dataUpdatedAt > 0));
+console.log('QueryObserver shouldFetchOnMount: options.refetchOnMount', options.refetchOnMount);
+console.log('QueryObserver shouldFetchOnMount: shouldFetchOn(query, options, options.refetchOnMount)', shouldFetchOn(query, options, options.refetchOnMount));
+console.log('QueryObserver shouldFetchOnMount', (shouldLoadOnMount(query, options) || query.state.dataUpdatedAt > 0 && shouldFetchOn(query, options, options.refetchOnMount)));
+
+// this was blocking fetch
+// fixedb by setting
+//      refetchOnMount: true,
+//      refetchOnReconnect: true,
   return shouldLoadOnMount(query, options) || query.state.dataUpdatedAt > 0 && shouldFetchOn(query, options, options.refetchOnMount);
+  //return shouldLoadOnMount(query, options) || query.state.dataUpdatedAt > 0;
 }
 
 function shouldFetchOn(query, options, field) {
@@ -3876,6 +3848,25 @@ const useQueryClient = ({
   return queryClient;
 };
 
+/*
+
+pause all queries until persistent cache is restored
+
+based on
+node_modules/@tanstack/react-query/build/lib/isRestoring.esm.js
+
+used in
+node_modules/@tanstack/react-query/build/lib/useBaseQuery.esm.js
+node_modules/@tanstack/react-query/build/lib/useQueries.esm.js
+
+*/
+
+const IsRestoringContext = createContext(false); // default: isRestoring = false
+const useIsRestoring = () => useContext(IsRestoringContext);
+IsRestoringContext.Provider;
+
+//import { notifyManager } from '@tanstack/query-core';
+
 // workaround ...
 // TODO more generic
 function cleanupQueryKeyProp(query) {
@@ -3890,6 +3881,13 @@ function cleanupQueryKeyProp(query) {
 // Base Query Function that is used to create the query.
 function createBaseQuery(options, Observer) {
     const queryClient = useQueryClient({ context: options.context });
+    const isRestoring = useIsRestoring();
+
+  //const [count, { increment, decrement }] = useCounter();
+
+
+    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createBaseQuery isRestoring', isRestoring);
+    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createBaseQuery isRestoring()', isRestoring());
     const emptyData = Symbol('empty');
     // TODO(milahu): cleanup options?
     // TODO(milahu): remove solidjs Proxy objects from options?
@@ -3898,19 +3896,26 @@ function createBaseQuery(options, Observer) {
     // NOTE(milahu): defaultedOptions is an object
     // NOTE(milahu): defaultedOptions.queryKey is a Proxy
     const defaultedOptions = queryClient.defaultQueryOptions(options);
-    defaultedOptions._optimisticResults = 'optimistic';
+    defaultedOptions._optimisticResults = isRestoring() ? 'isRestoring' : 'optimistic'; // Include callbacks in batch renders
     console.log('@tanstack/solid-query/build/solid/createBaseQuery.js init observer: options', options);
 
     cleanupQueryKeyProp(defaultedOptions);
     console.log('@tanstack/solid-query/build/solid/createBaseQuery.js init observer: defaultedOptions', defaultedOptions);
 
+    /* react
+    const [observer] = React.useState(() => new Observer(queryClient, defaultedOptions));
+    const result = observer.getOptimisticResult(defaultedOptions);
+    */
+
     const observer = new Observer(queryClient, defaultedOptions);
     const [state, setState] = createStore$1(
     // @ts-ignore
     observer.getOptimisticResult(defaultedOptions));
+
     const [dataResource, { refetch, mutate }] = createResource(() => {
         return new Promise((resolve) => {
-            if (!(state.isFetching && state.isLoading)) {
+            console.log('dataResource Promise: isRestoring', isRestoring());
+            if (!(state.isFetching && state.isLoading && !isRestoring())) {
                 if (unwrap(state.data) === emptyData) {
                     resolve(undefined);
                 }
@@ -3923,30 +3928,28 @@ function createBaseQuery(options, Observer) {
         refetch();
     });
     let taskQueue = [];
-    const unsubscribe = observer.subscribe((result) => {
-        taskQueue.push(() => {
-            batch(() => {
-                const unwrappedResult = { ...unwrap(result) };
-                if (unwrappedResult.data === undefined) {
-                    // This is a hack to prevent Solid
-                    // from deleting the data property when it is `undefined`
-                    // ref: https://www.solidjs.com/docs/latest/api#updating-stores
-                    // @ts-ignore
-                    unwrappedResult.data = emptyData;
-                }
-                setState(unwrap(unwrappedResult));
-                mutate(() => unwrap(result.data));
-                refetch();
-            });
-        });
-        queueMicrotask(() => {
-            const taskToRun = taskQueue.pop();
-            if (taskToRun) {
-                taskToRun();
-            }
-            taskQueue = [];
-        });
-    });
+
+
+
+/* TODO translate react to solid
+useSyncExternalStore(
+    React.useCallback(
+        onStoreChange => (
+            // return fake unsubscribe fn
+            isRestoring ? () => undefined :
+            // return real unsubscribe fn
+            observer.subscribe(
+                notifyManager.batchCalls(onStoreChange)
+            )
+        ),
+        [observer, isRestoring]
+    ),
+    () => observer.getCurrentResult(),
+    () => observer.getCurrentResult()
+);
+*/
+    let unsubscribe = () => undefined;
+
     onCleanup(() => unsubscribe());
     onMount(() => {
         // TODO(milahu): cleanup options?
@@ -3957,13 +3960,16 @@ function createBaseQuery(options, Observer) {
     });
     // NOTE(milahu): this is reactive to options
     createComputed(() => {
+        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(options): isRestoring()', isRestoring());
         const newDefaultedOptions = queryClient.defaultQueryOptions(options);
+        newDefaultedOptions._optimisticResults = isRestoring() ? 'isRestoring' : 'optimistic'; // Include callbacks in batch renders
         // TODO(milahu): cleanup options?
         cleanupQueryKeyProp(newDefaultedOptions);
         console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(options): newDefaultedOptions', newDefaultedOptions);
         observer.setOptions(newDefaultedOptions);
     });
     createComputed(on(() => state.status, () => {
+        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(state.status)');
         if (state.isError &&
             !state.isFetching &&
             shouldThrowError(observer.options.useErrorBoundary, [
@@ -3973,6 +3979,75 @@ function createBaseQuery(options, Observer) {
             throw state.error;
         }
     }));
+    /* TypeError: Cannot read properties of undefined (reading 'currentResult')
+    createComputed(on(observer.getCurrentResult, () => {
+        console.log(`@tanstack/solid-query/build/solid/createBaseQuery.js createComputed observer.getCurrentResult()`, observer.getCurrentResult())
+    }));
+    */
+
+
+
+    //createComputed(on(isRestoring, () => {
+    createComputed(() => {
+
+        // debug
+        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring): isRestoring()', isRestoring());
+        if (isRestoring()) {
+            // TODO ...?
+            return;
+        }
+
+/*
+        const newDefaultedOptions = queryClient.defaultQueryOptions(options);
+        newDefaultedOptions._optimisticResults = isRestoring() ? 'isRestoring' : 'optimistic'; // Include callbacks in batch renders
+        // TODO(milahu): cleanup options?
+        cleanupQueryKeyProp(newDefaultedOptions)
+        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring): newDefaultedOptions', newDefaultedOptions)
+        observer.setOptions(newDefaultedOptions);
+
+        // debug
+        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring): isRestoring=false -> calling observer.subscribe')
+*/
+
+        // FIXME this does not update query.status
+        // result is in cache but is not loaded
+
+        // result is the actual fetch-result
+        unsubscribe = observer.subscribe((result) => {
+            console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: result', result);
+            taskQueue.push(() => {
+                batch(() => {
+                    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: batch');
+                    const unwrappedResult = { ...unwrap(result) };
+                    if (unwrappedResult.data === undefined) {
+                        // This is a hack to prevent Solid
+                        // from deleting the data property when it is `undefined`
+                        // ref: https://www.solidjs.com/docs/latest/api#updating-stores
+                        // @ts-ignore
+                        unwrappedResult.data = emptyData;
+                    }
+                    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: setState');
+                    setState(unwrap(unwrappedResult));
+                    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: mutate');
+                    mutate(() => unwrap(result.data));
+                    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: refetch');
+                    refetch();
+                });
+            });
+            queueMicrotask(() => {
+                const taskToRun = taskQueue.pop();
+                if (taskToRun) {
+                    taskToRun();
+                }
+                taskQueue = [];
+            });
+        });
+
+    });
+//    }));
+
+
+
     const handler = {
         get(target, prop) {
             if (prop === 'data') {
@@ -7868,10 +7943,6 @@ async function persistQueryClientRestore({
   buster = '',
   hydrateOptions
 }) {
-  // pause all queries until queryClient is restored
-  // this is used in node_modules/@tanstack/query-core/build/lib/queryObserver.esm.js
-  queryClient.paused = true;
-
   try {
     const persistedClient = await persister.restoreClient();
 
@@ -7892,14 +7963,6 @@ async function persistQueryClientRestore({
   } catch (err) {
 
     persister.removeClient();
-  }
-
-  // queryClient is restored -> restart paused queries
-  queryClient.paused = false;
-  if (queryClient.afterPersistQueryClientRestore) {
-    for (const restartQuery of queryClient.afterPersistQueryClientRestore) {
-      restartQuery();
-    }
   }
 }
 /**
@@ -7938,6 +8001,28 @@ function persistQueryClientSubscribe(props) {
     unusbscribeMutationCache();
   };
 }
+/**
+ * Restores persisted data to QueryCache and persists further changes.
+ */
+
+function persistQueryClient(props) {
+  let hasUnsubscribed = false;
+  let persistQueryClientUnsubscribe;
+
+  const unsubscribe = () => {
+    hasUnsubscribed = true;
+    persistQueryClientUnsubscribe == null ? void 0 : persistQueryClientUnsubscribe();
+  }; // Attempt restore
+
+
+  const restorePromise = persistQueryClientRestore(props).then(() => {
+    if (!hasUnsubscribed) {
+      // Subscribe to changes in the query cache to trigger the save
+      persistQueryClientUnsubscribe = persistQueryClientSubscribe(props);
+    }
+  });
+  return [unsubscribe, restorePromise];
+}
 
 // TODO?
 // export { persistQueryClient, persistQueryClientRestore, persistQueryClientSave, persistQueryClientSubscribe }
@@ -7968,7 +8053,14 @@ const PersistQueryClientProvider = props => {
   const mergedProps = mergeProps({
     contextSharing: false
   }, props);
-  let persistQueryClientUnsubscribe;
+
+  //let unsubscribe
+
+  //const [isRestoring, setIsRestoring] = React.useState(true)
+  const [isRestoring, setIsRestoring] = createSignal(true); // closest to react version
+  //const [isRestoring, setIsRestoring] = useIsRestoring(); setIsRestoring(true)
+
+  let isStale = false;
 
   //onMount(() => {
   // same as in non-persisted provider
@@ -7984,17 +8076,26 @@ const PersistQueryClientProvider = props => {
   // sync API prop names: rename client to queryClient
   // https://github.com/TanStack/query/discussions/4365
   mergedProps.queryClient = mergedProps.client;
+  const [unsubscribe, restorePromise] = persistQueryClient(mergedProps);
+  restorePromise.then(() => {
+    console.log('tanstack-solid-query-persist-client.jsx restorePromise done');
+    if (!isStale) {
+      mergedProps.onSuccess?.(); // TODO remove? only in react?
+      console.log('tanstack-solid-query-persist-client.jsx restorePromise done: setIsRestoring(false)');
+      setIsRestoring(false);
+    }
+  });
 
   // restore old queries
-  persistQueryClientRestore(mergedProps);
+  //persistQueryClientRestore(mergedProps)
 
   // subscribe
-  // FIXME restoreClient is never called
-  console.log('PersistQueryClientProvider.onMount: subscribe');
-  persistQueryClientUnsubscribe = persistQueryClientSubscribe(mergedProps);
+  //console.log('PersistQueryClientProvider: subscribe')
+  //unsubscribe =
+  //persistQueryClientSubscribe(mergedProps)
 
   // test: mount later
-  //console.log('PersistQueryClientProvider.onMount: mount')
+  //console.log('PersistQueryClientProvider: mount')
   //mergedProps.client.mount()
   //});
 
@@ -8004,12 +8105,24 @@ const PersistQueryClientProvider = props => {
     mergedProps.client.unmount();
 
     // persistence ...
+    isStale = true;
 
     //console.log('PersistQueryClientProvider.onCleanup: unsubscribe')
     // unsubscribe
-    persistQueryClientUnsubscribe();
+    unsubscribe();
   });
   const QueryClientContext = getQueryClientContext(mergedProps.context, mergedProps.contextSharing);
+
+  /*
+  IsRestoringProvider
+  https://github.com/TanStack/query/blob/main/packages/react-query-persist-client/src/PersistQueryClientProvider.tsx
+  
+  not reactive
+            <IsRestoringContext.Provider value={isRestoring()}>
+            <IsRestoringContext.Provider value={() => isRestoring()}>
+  
+  */
+
   return createComponent(QueryClientSharingContext.Provider, {
     get value() {
       return !mergedProps.context && mergedProps.contextSharing;
@@ -8020,7 +8133,12 @@ const PersistQueryClientProvider = props => {
           return mergedProps.client;
         },
         get children() {
-          return mergedProps.children;
+          return createComponent(IsRestoringContext.Provider, {
+            value: isRestoring,
+            get children() {
+              return mergedProps.children;
+            }
+          });
         }
       });
     }
@@ -8040,6 +8158,11 @@ const octokit = new Octokit({
   auth: "gith" + "ub_p" + "at_" + "11AD" + "C3YXY0JNCQB" + "bvqukhc_VAYx" + "GiSpKsCYsiE2vy" + "zOR1iVYYmVkPEB" + "707abTxLywAS22" + "REUDVgkOBJp83",
   userAgent: 'milahu/prosemirror-inplace-editing-demo 0.0.0'
 });
+
+/*
+      <GithubFile path="file2"/>
+*/
+
 function App() {
   const persister = createIDBPersister();
   return createComponent(PersistQueryClientProvider, {
@@ -8048,8 +8171,6 @@ function App() {
     get children() {
       return [_tmpl$.cloneNode(true), createComponent(GithubFile, {
         path: "file1"
-      }), createComponent(GithubFile, {
-        path: "file2"
       })];
     }
   });
@@ -8094,7 +8215,11 @@ function GithubFile(props) {
 
     // any previous data will be kept when fetching new data because the query key changed.
     // example: this Query is part of a paginated component
-    keepPreviousData: true,
+    //keepPreviousData: true,
+    // guess: this will set query.state.dataUpdatedAt ?
+
+    //retryOnMount: true,
+
     // Defaults to 5 * 60 * 1000 (5 minutes) or Infinity during SSR
     // The time in milliseconds that unused/inactive cache data remains in memory. When a query's cache becomes unused or inactive, that cache data will be garbage collected after this duration. When different cache times are specified, the longest one will be used.
     // If set to Infinity, will disable garbage collection
@@ -8113,12 +8238,16 @@ function GithubFile(props) {
     //   return shouldFetchOn(this.currentQuery, this.options, this.options.refetchOnWindowFocus);
     // }
     refetchOnWindowFocus: false,
+    //refetchOnWindowFocus: true, // default true!
+
     // @tanstack/query-core/build/lib/queryObserver.esm.js
     // function shouldFetchOnMount(query, options) {
     //   return shouldLoadOnMount(query, options) || query.state.dataUpdatedAt > 0 && shouldFetchOn(query, options, options.refetchOnMount);
     // }
-    refetchOnMount: false,
-    refetchOnReconnect: false
+    //refetchOnMount: false,
+    refetchOnMount: true,
+    //refetchOnReconnect: false,
+    refetchOnReconnect: true
   });
   return (() => {
     const _el$2 = _tmpl$5.cloneNode(true),
