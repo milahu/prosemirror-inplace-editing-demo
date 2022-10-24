@@ -5,7 +5,7 @@
   "scripts": {
     "postinstall": "patch-package",
     "start": "vite",
-    "dev": "vite",
+    "dev": "vite --clearScreen false",
     "devloop": "./scripts/devloop.sh",
     "build": "vite build",
     "serve": "vite preview"
