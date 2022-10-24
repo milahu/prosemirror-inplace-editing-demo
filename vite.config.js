@@ -1,13 +1,53 @@
 import { defineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 
+const assetsDir = '';
+//const assetsDir = 'assets/';
+
+const outputDefaults = {
+  // remove hashes from filenames
+  entryFileNames: `${assetsDir}[name].js`,
+  chunkFileNames: `${assetsDir}[name].js`,
+  assetFileNames: `${assetsDir}[name].[ext]`,
+}
+
 export default defineConfig({
-  plugins: [solidPlugin()],
-  server: {
-    port: 3000,
-  },
+  plugins: [
+    solidPlugin(),
+  ],
+  base: "./", // generate relative paths in html
+  //root: 'src',
   build: {
+    outDir: 'docs', // github pages
     target: 'esnext',
+    //polyfillDynamicImport: false,
+    //sourcemap: true,
+    minify: false, // smaller git diffs
+    // example sizes for solidjs app with monaco-editor
+    // false: 5396.78 KiB // smaller git diffs
+    // 'esbuild': 2027.36 KiB // default
+    // 'terser': 2002.37 KiB
+    rollupOptions: {
+      output: {
+        ...outputDefaults,
+      }
+    },
+  },
+  esbuild: {
+    // keep names of functions an classes
+    // dont rename class BufferNode to class BufferNode$1
+    // https://github.com/evanw/esbuild/issues/510#event-3983228566
+    // https://github.com/vitejs/vite/issues/7916
+    // see src/nix-eval.js
+    // no effect
+    keepNames: true,
+  },
+  worker: {
+    rollupOptions: {
+      output: {
+        ...outputDefaults,
+      }
+    },
   },
   resolve: {
     alias: {
