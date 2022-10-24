@@ -8,7 +8,6 @@ inplace editable web pages, contribute changes back to github
 cd $(mktemp -d)
 git clone --depth 1 https://github.com/milahu/prosemirror-inplace-editing-demo
 cd prosemirror-inplace-editing-demo/
-cd solid/
 pnpm install 
 npm run dev 
 ```
