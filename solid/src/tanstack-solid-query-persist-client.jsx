@@ -1,7 +1,14 @@
 /*
+
 @tanstack/solid-query-persist-client
 
-TODO contribute to @tanstack/query
+
+
+usage
+
+this is a drop-in replacement for QueryClientProvider from @tanstack/solid-query
+
+
 
 based on
 
@@ -14,17 +21,26 @@ node_modules/@tanstack/react-query-persist-client/build/lib/PersistQueryClientPr
 
 persistQueryClientSubscribe in
 node_modules/@tanstack/query-persist-client-core/build/lib/persist.esm.js
+
 */
 
-import { createContext, useContext, mergeProps, onMount, onCleanup, createComponent } from 'solid-js';
 
-//import { persistQueryClientSubscribe } from "@tanstack/react-query-persist-client" // no. solid != react
-import { persistQueryClientSubscribe } from "@tanstack/query-persist-client-core"
 
-// this took me forever to fix ...
-// wrong defaultContext. different than defaultContext in useQueryClient 
-//const defaultContext = createContext(undefined); // wrong!
+import { createContext, mergeProps, onMount, onCleanup } from 'solid-js';
+
+// node_modules/@tanstack/query-persist-client-core/build/lib/persist.esm.js
+import { persistQueryClientSubscribe, persistQueryClientRestore } from "@tanstack/query-persist-client-core"
+
 import { defaultContext } from "@tanstack/solid-query"
+
+
+
+// TODO?
+// export { persistQueryClient, persistQueryClientRestore, persistQueryClientSave, persistQueryClientSubscribe }
+// export { removeOldestQuery }
+//export * from '@tanstack/query-persist-client-core';
+
+
 
 const QueryClientSharingContext = createContext(false); // If we are given a context, we will use it.
 // Otherwise, if contextSharing is on, we share the first and at least one
@@ -34,29 +50,20 @@ const QueryClientSharingContext = createContext(false); // If we are given a con
 // all use the same **instance** of context, regardless
 // of module scoping.
 
+
+
 function getQueryClientContext(context, contextSharing) {
   if (context) {
-    console.log(`PersistQueryClientProvider getQueryClientContext: context from arg`)
     return context;
   }
 
-  // used by useQueryClient
-  // node_modules/@tanstack/solid-query/build/lib/QueryClientProvider.esm.js
-
-  console.log(`PersistQueryClientProvider getQueryClientContext: contextSharing`, contextSharing) // false
-
   if (contextSharing && typeof window !== 'undefined') {
     if (!window.SolidQueryClientContext) {
-      console.log(`PersistQueryClientProvider getQueryClientContext: set window.SolidQueryClientContext`)
       window.SolidQueryClientContext = defaultContext;
     }
 
-    console.log(`PersistQueryClientProvider getQueryClientContext: return window.SolidQueryClientContext`)
-
     return window.SolidQueryClientContext;
   }
-
-  console.log(`PersistQueryClientProvider getQueryClientContext: return defaultContext`)
 
   return defaultContext;
 }
@@ -70,38 +77,43 @@ export const PersistQueryClientProvider = (props) => {
 
     let persistQueryClientUnsubscribe
 
-    onMount(() => {
+    //onMount(() => {
       // same as in non-persisted provider
       console.log('PersistQueryClientProvider.onMount: mount')
-      // wrong? mount later? - no.
       mergedProps.client.mount()
+      // TODO mount later?
 
       // persistence ...
-
-      // subscribe
-      // import { persistQueryClientSubscribe } from "@tanstack/react-query-persist-client"
-      console.log('PersistQueryClientProvider.onMount: subscribe')
 
       // note: different API
       // persistQueryClientSubscribe: props.queryClient
       // QueryClientProvider: props.client
+      // sync API prop names: rename client to queryClient
+      // https://github.com/TanStack/query/discussions/4365
       mergedProps.queryClient = mergedProps.client
 
+      // restore old queries
+      persistQueryClientRestore(mergedProps)
+
+      // subscribe
+      // FIXME restoreClient is never called
+      console.log('PersistQueryClientProvider.onMount: subscribe')
       persistQueryClientUnsubscribe =
       persistQueryClientSubscribe(mergedProps)
 
       // test: mount later
+      //console.log('PersistQueryClientProvider.onMount: mount')
       //mergedProps.client.mount()
-    });
+    //});
 
     onCleanup(() => {
       // same as in non-persisted provider
-      console.log('PersistQueryClientProvider.onCleanup: unmount')
+      //console.log('PersistQueryClientProvider.onCleanup: unmount')
       mergedProps.client.unmount()
 
       // persistence ...
 
-      console.log('PersistQueryClientProvider.onCleanup: unsubscribe')
+      //console.log('PersistQueryClientProvider.onCleanup: unsubscribe')
       // unsubscribe
       persistQueryClientUnsubscribe()
     })
@@ -116,75 +128,3 @@ export const PersistQueryClientProvider = (props) => {
       </QueryClientSharingContext.Provider>
     );
 };
-
-
-
-const PersistQueryClientProvider_ESM = props => {
-  const mergedProps = mergeProps({
-    contextSharing: false
-  }, props);
-
-  let persistQueryClientUnsubscribe
-
-  // onMount is too late??
-  // Error: No QueryClient set, use QueryClientProvider to set one
-  //onMount(() => {
-
-    // same as in non-persisted provider
-    console.log('PersistQueryClientProvider.onMount: mount')
-    mergedProps.client.mount()
-
-    // subscribe
-    // import { persistQueryClientSubscribe } from "@tanstack/react-query-persist-client"
-    console.log('PersistQueryClientProvider.onMount: subscribe')
-
-    // note: different API
-    // persistQueryClientSubscribe: props.queryClient
-    // QueryClientProvider: props.client
-    mergedProps.queryClient = mergedProps.client
-
-    persistQueryClientUnsubscribe =
-    persistQueryClientSubscribe(mergedProps)
-  //})
-
-  onCleanup(() => {
-
-    // same as in non-persisted provider
-    console.log('PersistQueryClientProvider.onCleanup: unmount')
-    mergedProps.client.unmount()
-
-    console.log('PersistQueryClientProvider.onCleanup: unsubscribe')
-    // unsubscribe
-    persistQueryClientUnsubscribe()
-  })
-
-  //onMount(() => mergedProps.client.mount());
-  //onCleanup(() => mergedProps.client.unmount());
-
-  const QueryClientContext = getQueryClientContext(mergedProps.context, mergedProps.contextSharing);
-  return createComponent(QueryClientSharingContext.Provider, {
-    get value() {
-      return !mergedProps.context && mergedProps.contextSharing;
-    },
-
-    get children() {
-      return createComponent(QueryClientContext.Provider, {
-        get value() {
-          return mergedProps.client;
-        },
-
-        get children() {
-          return mergedProps.children;
-        }
-
-      });
-    }
-
-  });
-};
-
-// export { persistQueryClient, persistQueryClientRestore, persistQueryClientSave, persistQueryClientSubscribe }
-// export { removeOldestQuery }
-export * from '@tanstack/query-persist-client-core';
-
-//export { PersistQueryClientProvider };
