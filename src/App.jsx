@@ -38,7 +38,7 @@ const octokit = new Octokit({
       <GithubFile path="file2"/>
 */
 
-function App() {
+function PersistApp() {
   const persister = createIDBPersister()
   return (
     <PersistQueryClientProvider
@@ -53,6 +53,21 @@ function App() {
     </PersistQueryClientProvider>
   )
 }
+
+function NoPersistApp() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <div>
+        goal: the "x-ratelimit-used" numbers should stay constant across page reloads.
+        this means that the cache is used = no refetching is done
+      </div>
+      <GithubFile path="file1"/>
+    </QueryClientProvider>
+  )
+}
+
+//const App = NoPersistApp
+const App = PersistApp
 
 function GithubFile(props) {
 
@@ -184,6 +199,7 @@ function GithubFile(props) {
               <div>{query.isFetching ? 'Background Updating...' : ' '}</div>
             </>
           </Match>
+          <Match when={true}>query.data is undefined</Match>
         </Switch>
       </div>
     </div>
