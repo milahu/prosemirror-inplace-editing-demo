@@ -3,8 +3,92 @@
 # declared package:
 #   @tanstack/query-core: 4.13.0
 #
+diff --git a/node_modules/@tanstack/query-core/build/lib/hydration.esm.js b/node_modules/@tanstack/query-core/build/lib/hydration.esm.js
+index c0a215c..38228a8 100644
+--- a/node_modules/@tanstack/query-core/build/lib/hydration.esm.js
++++ b/node_modules/@tanstack/query-core/build/lib/hydration.esm.js
+@@ -79,12 +79,17 @@ function hydrate(client, dehydratedState, options) {
+ 
+     if (query) {
+       if (query.state.dataUpdatedAt < dehydratedQuery.state.dataUpdatedAt) {
++        console.log('@tanstack/query-core hydration hydrate: update')
+         query.setState(dehydratedQuery.state);
+       }
++      else {
++        console.log('@tanstack/query-core hydration hydrate: dont update, query was refetched before restore')
++      }
+ 
+       return;
+     } // Restore query
+ 
++    console.log('@tanstack/query-core hydration hydrate: add')
+ 
+     queryCache.build(client, { ...(options == null ? void 0 : (_options$defaultOptio2 = options.defaultOptions) == null ? void 0 : _options$defaultOptio2.queries),
+       queryKey: dehydratedQuery.queryKey,
+diff --git a/node_modules/@tanstack/query-core/build/lib/query.esm.js b/node_modules/@tanstack/query-core/build/lib/query.esm.js
+index d425e30..54d064e 100644
+--- a/node_modules/@tanstack/query-core/build/lib/query.esm.js
++++ b/node_modules/@tanstack/query-core/build/lib/query.esm.js
+@@ -12,6 +12,8 @@ class Query extends Removable {
+     this.defaultOptions = config.defaultOptions;
+     this.setOptions(config.options);
+     this.observers = [];
++    // trace config.cache
++    console.log('@tanstack/query-core query constructor', new Error().stack)
+     this.cache = config.cache;
+     this.logger = config.logger || defaultLogger;
+     this.queryKey = config.queryKey;
+@@ -48,6 +50,7 @@ class Query extends Removable {
+   }
+ 
+   setState(state, setStateOptions) {
++    console.log('@tanstack/query-core query setState: dispatch')
+     this.dispatch({
+       type: 'setState',
+       state,
+@@ -432,10 +435,16 @@ class Query extends Removable {
+     };
+ 
+     this.state = reducer(this.state);
++    console.log('@tanstack/query-core query dispatch: batch notify')
+     notifyManager.batch(() => {
++      // NOTE(milahu): this.observers == []
++      // so lets trace this.cache.notify
++      console.log('@tanstack/query-core query dispatch notifyManager: notify observers', this.observers)
+       this.observers.forEach(observer => {
++        console.log('@tanstack/query-core query dispatch notifyManager: notify observer')
+         observer.onQueryUpdate(action);
+       });
++      console.log('@tanstack/query-core query dispatch notifyManager: notify cache')
+       this.cache.notify({
+         query: this,
+         type: 'updated',
+diff --git a/node_modules/@tanstack/query-core/build/lib/queryCache.esm.js b/node_modules/@tanstack/query-core/build/lib/queryCache.esm.js
+index 4c6c55b..64b5c1e 100644
+--- a/node_modules/@tanstack/query-core/build/lib/queryCache.esm.js
++++ b/node_modules/@tanstack/query-core/build/lib/queryCache.esm.js
+@@ -6,6 +6,7 @@ import { Subscribable } from './subscribable.esm.js';
+ // CLASS
+ class QueryCache extends Subscribable {
+   constructor(config) {
++    console.log('@tanstack/query-core queryCache constructor')
+     super();
+     this.config = config || {};
+     this.queries = [];
+@@ -97,8 +98,11 @@ class QueryCache extends Subscribable {
+   }
+ 
+   notify(event) {
++    console.log('@tanstack/query-core queryCache notify: event', event)
+     notifyManager.batch(() => {
++      console.log('@tanstack/query-core queryCache notify batch: this.listeners', this.listeners)
+       this.listeners.forEach(listener => {
++        console.log('@tanstack/query-core queryCache notify batch: listener', listener)
+         listener(event);
+       });
+     });
 diff --git a/node_modules/@tanstack/query-core/build/lib/queryObserver.esm.js b/node_modules/@tanstack/query-core/build/lib/queryObserver.esm.js
-index 7a9d8b4..586f157 100644
+index 7a9d8b4..faba8a9 100644
 --- a/node_modules/@tanstack/query-core/build/lib/queryObserver.esm.js
 +++ b/node_modules/@tanstack/query-core/build/lib/queryObserver.esm.js
 @@ -21,10 +21,14 @@ class QueryObserver extends Subscribable {
@@ -42,7 +126,25 @@ index 7a9d8b4..586f157 100644
      // Make sure we reference the latest query as the current one might have been removed
      this.updateQuery(); // Fetch
  
-@@ -491,11 +499,29 @@ class QueryObserver extends Subscribable {
+@@ -441,6 +449,8 @@ class QueryObserver extends Subscribable {
+   }
+ 
+   onQueryUpdate(action) {
++    console.log('@tanstack/query-core queryObserver onQueryUpdate: action', action)
++
+     const notifyOptions = {};
+ 
+     if (action.type === 'success') {
+@@ -449,6 +459,8 @@ class QueryObserver extends Subscribable {
+       notifyOptions.onError = true;
+     }
+ 
++    console.log('@tanstack/query-core queryObserver onQueryUpdate: updateResult')
++
+     this.updateResult(notifyOptions);
+ 
+     if (this.hasListeners()) {
+@@ -491,11 +503,29 @@ class QueryObserver extends Subscribable {
  }
  
  function shouldLoadOnMount(query, options) {

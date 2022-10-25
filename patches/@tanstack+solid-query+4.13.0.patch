@@ -136,10 +136,10 @@ index fc7a09a..5ad60c3 100644
          throw new Error('No QueryClient set, use QueryClientProvider to set one');
      }
 diff --git a/node_modules/@tanstack/solid-query/build/solid/createBaseQuery.js b/node_modules/@tanstack/solid-query/build/solid/createBaseQuery.js
-index 6665b9c..b5d552f 100644
+index 6665b9c..e287996 100644
 --- a/node_modules/@tanstack/solid-query/build/solid/createBaseQuery.js
 +++ b/node_modules/@tanstack/solid-query/build/solid/createBaseQuery.js
-@@ -1,20 +1,59 @@
+@@ -1,19 +1,64 @@
  import { useQueryClient } from './QueryClientProvider';
 -import { onMount, onCleanup, createComputed, createResource, on, batch, } from 'solid-js';
 +import { useIsRestoring } from './isRestoring';
@@ -167,8 +167,8 @@ index 6665b9c..b5d552f 100644
 +  //const [count, { increment, decrement }] = useCounter();
 +
 +
-+    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createBaseQuery isRestoring', isRestoring)
-+    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createBaseQuery isRestoring()', isRestoring())
++    console.log('@tanstack/solid-query createBaseQuery createBaseQuery isRestoring', isRestoring)
++    console.log('@tanstack/solid-query createBaseQuery createBaseQuery isRestoring()', isRestoring())
      const emptyData = Symbol('empty');
 +    // TODO(milahu): cleanup options?
 +    // TODO(milahu): remove solidjs Proxy objects from options?
@@ -179,10 +179,10 @@ index 6665b9c..b5d552f 100644
      const defaultedOptions = queryClient.defaultQueryOptions(options);
 -    defaultedOptions._optimisticResults = 'optimistic';
 +    defaultedOptions._optimisticResults = isRestoring() ? 'isRestoring' : 'optimistic'; // Include callbacks in batch renders
-+    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js init observer: options', options)
++    console.log('@tanstack/solid-query createBaseQuery init observer: options', options)
 +
 +    cleanupQueryKeyProp(defaultedOptions)
-+    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js init observer: defaultedOptions', defaultedOptions)
++    console.log('@tanstack/solid-query createBaseQuery init observer: defaultedOptions', defaultedOptions)
 +
 +    /* react
 +    const [observer] = React.useState(() => new Observer(queryClient, defaultedOptions));
@@ -190,19 +190,23 @@ index 6665b9c..b5d552f 100644
 +    */
 +
      const observer = new Observer(queryClient, defaultedOptions);
++
++    // get the initial result
++    // react: result
++    // solid: state
      const [state, setState] = createStore(
      // @ts-ignore
      observer.getOptimisticResult(defaultedOptions));
 +
      const [dataResource, { refetch, mutate }] = createResource(() => {
          return new Promise((resolve) => {
--            if (!(state.isFetching && state.isLoading)) {
 +            console.log('dataResource Promise: isRestoring', isRestoring())
-+            if (!(state.isFetching && state.isLoading && !isRestoring())) {
++            //if (!(state.isFetching && state.isLoading && !isRestoring())) { // wrong?
++            // wrong place to check isRestoring
+             if (!(state.isFetching && state.isLoading)) {
                  if (unwrap(state.data) === emptyData) {
                      resolve(undefined);
-                 }
-@@ -27,39 +66,48 @@ export function createBaseQuery(options, Observer) {
+@@ -27,39 +72,46 @@ export function createBaseQuery(options, Observer) {
          refetch();
      });
      let taskQueue = [];
@@ -234,21 +238,19 @@ index 6665b9c..b5d552f 100644
 +
 +
 +/* TODO translate react to solid
-+useSyncExternalStore(
++// https://github.com/TanStack/query/blob/main/packages/react-query/src/useBaseQuery.ts
++
++  useSyncExternalStore(
 +    React.useCallback(
-+        onStoreChange => (
-+            // return fake unsubscribe fn
-+            isRestoring ? () => undefined :
-+            // return real unsubscribe fn
-+            observer.subscribe(
-+                notifyManager.batchCalls(onStoreChange)
-+            )
-+        ),
-+        [observer, isRestoring]
++      (onStoreChange) =>
++        isRestoring
++          ? () => undefined
++          : observer.subscribe(notifyManager.batchCalls(onStoreChange)),
++      [observer, isRestoring],
 +    ),
 +    () => observer.getCurrentResult(),
-+    () => observer.getCurrentResult()
-+);
++    () => observer.getCurrentResult(),
++  )
 +*/
 +    let unsubscribe = () => undefined;
 +
@@ -257,31 +259,31 @@ index 6665b9c..b5d552f 100644
 +        // TODO(milahu): cleanup options?
 +        // redundant?
 +        //cleanupQueryKeyProp(defaultedOptions)
-+        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js onMount: defaultedOptions', defaultedOptions)
++        console.log('@tanstack/solid-query createBaseQuery onMount: defaultedOptions', defaultedOptions)
          observer.setOptions(defaultedOptions, { listeners: false });
      });
 +    // NOTE(milahu): this is reactive to options
      createComputed(() => {
-+        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(options): isRestoring()', isRestoring())
++        console.log('@tanstack/solid-query createBaseQuery createComputed(options): isRestoring()', isRestoring())
          const newDefaultedOptions = queryClient.defaultQueryOptions(options);
 +        newDefaultedOptions._optimisticResults = isRestoring() ? 'isRestoring' : 'optimistic'; // Include callbacks in batch renders
 +        // TODO(milahu): cleanup options?
 +        cleanupQueryKeyProp(newDefaultedOptions)
-+        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(options): newDefaultedOptions', newDefaultedOptions)
++        console.log('@tanstack/solid-query createBaseQuery createComputed(options): newDefaultedOptions', newDefaultedOptions)
          observer.setOptions(newDefaultedOptions);
      });
      createComputed(on(() => state.status, () => {
-+        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(state.status)')
++        console.log('@tanstack/solid-query createBaseQuery createComputed(state.status)')
          if (state.isError &&
              !state.isFetching &&
              shouldThrowError(observer.options.useErrorBoundary, [
-@@ -69,6 +117,75 @@ export function createBaseQuery(options, Observer) {
+@@ -69,6 +121,104 @@ export function createBaseQuery(options, Observer) {
              throw state.error;
          }
      }));
 +    /* TypeError: Cannot read properties of undefined (reading 'currentResult')
 +    createComputed(on(observer.getCurrentResult, () => {
-+        console.log(`@tanstack/solid-query/build/solid/createBaseQuery.js createComputed observer.getCurrentResult()`, observer.getCurrentResult())
++        console.log(`@tanstack/solid-query createBaseQuery createComputed observer.getCurrentResult()`, observer.getCurrentResult())
 +    }));
 +    */
 +
@@ -291,33 +293,56 @@ index 6665b9c..b5d552f 100644
 +    createComputed(() => {
 +
 +        // debug
-+        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring): isRestoring()', isRestoring())
++        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): isRestoring()', isRestoring())
 +        if (isRestoring()) {
 +            // TODO ...?
++            // called by ...?
++            // @tanstack/query-core/build/lib/query.esm.js
++            // observer.onQueryUpdate(action);
++            /* no. this will refetch = cache miss
++            observer.subscribe((result) => {
++                console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): observer.subscribe', new Error().stack)
++                console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): observer.subscribe result', result)
++            })
++            */
 +            return;
 +        }
 +
-+/*
++        /*
++        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): observer.setOptions')
 +        const newDefaultedOptions = queryClient.defaultQueryOptions(options);
 +        newDefaultedOptions._optimisticResults = isRestoring() ? 'isRestoring' : 'optimistic'; // Include callbacks in batch renders
 +        // TODO(milahu): cleanup options?
 +        cleanupQueryKeyProp(newDefaultedOptions)
-+        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring): newDefaultedOptions', newDefaultedOptions)
++        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): newDefaultedOptions', newDefaultedOptions)
 +        observer.setOptions(newDefaultedOptions);
++        */
++
++
++
++
++        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): observer.getOptimisticResult ...')
++        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): observer.getOptimisticResult', observer.getOptimisticResult(defaultedOptions))
++
++        // react-query/src/useBaseQuery.ts calls observer.getCurrentResult
++        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): observer.getCurrentResult ...')
++        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): observer.getCurrentResult', observer.getCurrentResult())
++
++        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): isRestoring=false -> calling observer.subscribe')
 +
 +        // debug
-+        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring): isRestoring=false -> calling observer.subscribe')
-+*/
++        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): isRestoring=false -> calling observer.subscribe')
 +
 +        // FIXME this does not update query.status
 +        // result is in cache but is not loaded
 +
 +        // result is the actual fetch-result
-+        unsubscribe = observer.subscribe((result) => {
-+            console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: result', result)
++        //unsubscribe = observer.subscribe((result) => {
++        const handleResult = (result) => {
++            console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring) observer.subscribe: result', result)
 +            taskQueue.push(() => {
 +                batch(() => {
-+                    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: batch')
++                    console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring) observer.subscribe: batch')
 +                    const unwrappedResult = { ...unwrap(result) };
 +                    if (unwrappedResult.data === undefined) {
 +                        // This is a hack to prevent Solid
@@ -326,11 +351,12 @@ index 6665b9c..b5d552f 100644
 +                        // @ts-ignore
 +                        unwrappedResult.data = emptyData;
 +                    }
-+                    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: setState')
++                    console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring) observer.subscribe: setState')
++                    // TODO(milahu): why unwrap again?
 +                    setState(unwrap(unwrappedResult));
-+                    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: mutate')
++                    console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring) observer.subscribe: mutate')
 +                    mutate(() => unwrap(result.data));
-+                    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: refetch')
++                    console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring) observer.subscribe: refetch')
 +                    refetch();
 +                });
 +            });
@@ -341,8 +367,13 @@ index 6665b9c..b5d552f 100644
 +                }
 +                taskQueue = [];
 +            });
-+        });
++        };
 +
++        // result was restored from cache -> update result
++        handleResult(observer.getCurrentResult());
++
++        // listen for future results
++        observer.subscribe(handleResult);
 +    });
 +//    }));
 +
@@ -405,10 +436,10 @@ index 04c68ec..4937f6f 100644
 +export { IsRestoringProvider, IsRestoringContext, useIsRestoring } from './isRestoring';
 diff --git a/node_modules/@tanstack/solid-query/build/solid/isRestoring.js b/node_modules/@tanstack/solid-query/build/solid/isRestoring.js
 new file mode 100644
-index 0000000..1bd398c
+index 0000000..bc2889c
 --- /dev/null
 +++ b/node_modules/@tanstack/solid-query/build/solid/isRestoring.js
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,26 @@
 +/*
 +
 +pause all queries until persistent cache is restored
@@ -423,8 +454,14 @@ index 0000000..1bd398c
 +*/
 +
 +import { createContext, useContext } from 'solid-js';
++import { createSignal } from 'solid-js';
 +
-+const IsRestoringContext = createContext(false); // default: isRestoring = false
++//const IsRestoringContext = createContext(false); // default value: isRestoring = false
++
++// NOTE(milahu): overhead? this makes the call-site simpler
++const [isRestoring, _setIsRestoring] = createSignal(false) // default value: isRestoring = false
++const IsRestoringContext = createContext(isRestoring);
++
 +const useIsRestoring = () => useContext(IsRestoringContext);
 +const IsRestoringProvider = IsRestoringContext.Provider;
 +
