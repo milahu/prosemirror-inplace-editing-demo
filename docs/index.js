@@ -1618,6 +1618,8 @@ class Query extends Removable {
     this.defaultOptions = config.defaultOptions;
     this.setOptions(config.options);
     this.observers = [];
+    // trace config.cache
+    console.log('@tanstack/query-core query constructor', new Error().stack);
     this.cache = config.cache;
     this.logger = config.logger || defaultLogger;
     this.queryKey = config.queryKey;
@@ -1654,6 +1656,7 @@ class Query extends Removable {
   }
 
   setState(state, setStateOptions) {
+    console.log('@tanstack/query-core query setState: dispatch');
     this.dispatch({
       type: 'setState',
       state,
@@ -2027,10 +2030,16 @@ class Query extends Removable {
     };
 
     this.state = reducer(this.state);
+    console.log('@tanstack/query-core query dispatch: batch notify');
     notifyManager.batch(() => {
+      // NOTE(milahu): this.observers == []
+      // so lets trace this.cache.notify
+      console.log('@tanstack/query-core query dispatch notifyManager: notify observers', this.observers);
       this.observers.forEach(observer => {
+        console.log('@tanstack/query-core query dispatch notifyManager: notify observer');
         observer.onQueryUpdate(action);
       });
+      console.log('@tanstack/query-core query dispatch notifyManager: notify cache');
       this.cache.notify({
         query: this,
         type: 'updated',
@@ -2065,6 +2074,7 @@ function getDefaultState$1(options) {
 // CLASS
 class QueryCache extends Subscribable {
   constructor(config) {
+    console.log('@tanstack/query-core queryCache constructor');
     super();
     this.config = config || {};
     this.queries = [];
@@ -2156,8 +2166,11 @@ class QueryCache extends Subscribable {
   }
 
   notify(event) {
+    console.log('@tanstack/query-core queryCache notify: event', event);
     notifyManager.batch(() => {
+      console.log('@tanstack/query-core queryCache notify batch: this.listeners', this.listeners);
       this.listeners.forEach(listener => {
+        console.log('@tanstack/query-core queryCache notify batch: listener', listener);
         listener(event);
       });
     });
@@ -3369,6 +3382,8 @@ console.log('QueryObserver.executeFetch', new Error().stack);
   }
 
   onQueryUpdate(action) {
+    console.log('@tanstack/query-core queryObserver onQueryUpdate: action', action);
+
     const notifyOptions = {};
 
     if (action.type === 'success') {
@@ -3376,6 +3391,8 @@ console.log('QueryObserver.executeFetch', new Error().stack);
     } else if (action.type === 'error' && !isCancelledError(action.error)) {
       notifyOptions.onError = true;
     }
+
+    console.log('@tanstack/query-core queryObserver onQueryUpdate: updateResult');
 
     this.updateResult(notifyOptions);
 
@@ -3542,12 +3559,17 @@ function hydrate(client, dehydratedState, options) {
 
     if (query) {
       if (query.state.dataUpdatedAt < dehydratedQuery.state.dataUpdatedAt) {
+        console.log('@tanstack/query-core hydration hydrate: update');
         query.setState(dehydratedQuery.state);
+      }
+      else {
+        console.log('@tanstack/query-core hydration hydrate: dont update, query was refetched before restore');
       }
 
       return;
     } // Restore query
 
+    console.log('@tanstack/query-core hydration hydrate: add');
 
     queryCache.build(client, { ...(options == null ? void 0 : (_options$defaultOptio2 = options.defaultOptions) == null ? void 0 : _options$defaultOptio2.queries),
       queryKey: dehydratedQuery.queryKey,
@@ -3861,7 +3883,12 @@ node_modules/@tanstack/react-query/build/lib/useQueries.esm.js
 
 */
 
-const IsRestoringContext = createContext(false); // default: isRestoring = false
+//const IsRestoringContext = createContext(false); // default value: isRestoring = false
+
+// NOTE(milahu): overhead? this makes the call-site simpler
+const [isRestoring, _setIsRestoring] = createSignal(false); // default value: isRestoring = false
+const IsRestoringContext = createContext(isRestoring);
+
 const useIsRestoring = () => useContext(IsRestoringContext);
 IsRestoringContext.Provider;
 
@@ -3886,8 +3913,8 @@ function createBaseQuery(options, Observer) {
   //const [count, { increment, decrement }] = useCounter();
 
 
-    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createBaseQuery isRestoring', isRestoring);
-    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createBaseQuery isRestoring()', isRestoring());
+    console.log('@tanstack/solid-query createBaseQuery createBaseQuery isRestoring', isRestoring);
+    console.log('@tanstack/solid-query createBaseQuery createBaseQuery isRestoring()', isRestoring());
     const emptyData = Symbol('empty');
     // TODO(milahu): cleanup options?
     // TODO(milahu): remove solidjs Proxy objects from options?
@@ -3897,10 +3924,10 @@ function createBaseQuery(options, Observer) {
     // NOTE(milahu): defaultedOptions.queryKey is a Proxy
     const defaultedOptions = queryClient.defaultQueryOptions(options);
     defaultedOptions._optimisticResults = isRestoring() ? 'isRestoring' : 'optimistic'; // Include callbacks in batch renders
-    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js init observer: options', options);
+    console.log('@tanstack/solid-query createBaseQuery init observer: options', options);
 
     cleanupQueryKeyProp(defaultedOptions);
-    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js init observer: defaultedOptions', defaultedOptions);
+    console.log('@tanstack/solid-query createBaseQuery init observer: defaultedOptions', defaultedOptions);
 
     /* react
     const [observer] = React.useState(() => new Observer(queryClient, defaultedOptions));
@@ -3908,6 +3935,10 @@ function createBaseQuery(options, Observer) {
     */
 
     const observer = new Observer(queryClient, defaultedOptions);
+
+    // get the initial result
+    // react: result
+    // solid: state
     const [state, setState] = createStore$1(
     // @ts-ignore
     observer.getOptimisticResult(defaultedOptions));
@@ -3915,7 +3946,9 @@ function createBaseQuery(options, Observer) {
     const [dataResource, { refetch, mutate }] = createResource(() => {
         return new Promise((resolve) => {
             console.log('dataResource Promise: isRestoring', isRestoring());
-            if (!(state.isFetching && state.isLoading && !isRestoring())) {
+            //if (!(state.isFetching && state.isLoading && !isRestoring())) { // wrong?
+            // wrong place to check isRestoring
+            if (!(state.isFetching && state.isLoading)) {
                 if (unwrap(state.data) === emptyData) {
                     resolve(undefined);
                 }
@@ -3932,21 +3965,19 @@ function createBaseQuery(options, Observer) {
 
 
 /* TODO translate react to solid
-useSyncExternalStore(
+// https://github.com/TanStack/query/blob/main/packages/react-query/src/useBaseQuery.ts
+
+  useSyncExternalStore(
     React.useCallback(
-        onStoreChange => (
-            // return fake unsubscribe fn
-            isRestoring ? () => undefined :
-            // return real unsubscribe fn
-            observer.subscribe(
-                notifyManager.batchCalls(onStoreChange)
-            )
-        ),
-        [observer, isRestoring]
+      (onStoreChange) =>
+        isRestoring
+          ? () => undefined
+          : observer.subscribe(notifyManager.batchCalls(onStoreChange)),
+      [observer, isRestoring],
     ),
     () => observer.getCurrentResult(),
-    () => observer.getCurrentResult()
-);
+    () => observer.getCurrentResult(),
+  )
 */
     let unsubscribe = () => undefined;
 
@@ -3955,21 +3986,21 @@ useSyncExternalStore(
         // TODO(milahu): cleanup options?
         // redundant?
         //cleanupQueryKeyProp(defaultedOptions)
-        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js onMount: defaultedOptions', defaultedOptions);
+        console.log('@tanstack/solid-query createBaseQuery onMount: defaultedOptions', defaultedOptions);
         observer.setOptions(defaultedOptions, { listeners: false });
     });
     // NOTE(milahu): this is reactive to options
     createComputed(() => {
-        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(options): isRestoring()', isRestoring());
+        console.log('@tanstack/solid-query createBaseQuery createComputed(options): isRestoring()', isRestoring());
         const newDefaultedOptions = queryClient.defaultQueryOptions(options);
         newDefaultedOptions._optimisticResults = isRestoring() ? 'isRestoring' : 'optimistic'; // Include callbacks in batch renders
         // TODO(milahu): cleanup options?
         cleanupQueryKeyProp(newDefaultedOptions);
-        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(options): newDefaultedOptions', newDefaultedOptions);
+        console.log('@tanstack/solid-query createBaseQuery createComputed(options): newDefaultedOptions', newDefaultedOptions);
         observer.setOptions(newDefaultedOptions);
     });
     createComputed(on(() => state.status, () => {
-        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(state.status)');
+        console.log('@tanstack/solid-query createBaseQuery createComputed(state.status)');
         if (state.isError &&
             !state.isFetching &&
             shouldThrowError(observer.options.useErrorBoundary, [
@@ -3981,7 +4012,7 @@ useSyncExternalStore(
     }));
     /* TypeError: Cannot read properties of undefined (reading 'currentResult')
     createComputed(on(observer.getCurrentResult, () => {
-        console.log(`@tanstack/solid-query/build/solid/createBaseQuery.js createComputed observer.getCurrentResult()`, observer.getCurrentResult())
+        console.log(`@tanstack/solid-query createBaseQuery createComputed observer.getCurrentResult()`, observer.getCurrentResult())
     }));
     */
 
@@ -3991,33 +4022,56 @@ useSyncExternalStore(
     createComputed(() => {
 
         // debug
-        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring): isRestoring()', isRestoring());
+        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): isRestoring()', isRestoring());
         if (isRestoring()) {
             // TODO ...?
+            // called by ...?
+            // @tanstack/query-core/build/lib/query.esm.js
+            // observer.onQueryUpdate(action);
+            /* no. this will refetch = cache miss
+            observer.subscribe((result) => {
+                console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): observer.subscribe', new Error().stack)
+                console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): observer.subscribe result', result)
+            })
+            */
             return;
         }
 
-/*
+        /*
+        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): observer.setOptions')
         const newDefaultedOptions = queryClient.defaultQueryOptions(options);
         newDefaultedOptions._optimisticResults = isRestoring() ? 'isRestoring' : 'optimistic'; // Include callbacks in batch renders
         // TODO(milahu): cleanup options?
         cleanupQueryKeyProp(newDefaultedOptions)
-        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring): newDefaultedOptions', newDefaultedOptions)
+        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): newDefaultedOptions', newDefaultedOptions)
         observer.setOptions(newDefaultedOptions);
+        */
+
+
+
+
+        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): observer.getOptimisticResult ...');
+        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): observer.getOptimisticResult', observer.getOptimisticResult(defaultedOptions));
+
+        // react-query/src/useBaseQuery.ts calls observer.getCurrentResult
+        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): observer.getCurrentResult ...');
+        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): observer.getCurrentResult', observer.getCurrentResult());
+
+        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): isRestoring=false -> calling observer.subscribe');
 
         // debug
-        console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring): isRestoring=false -> calling observer.subscribe')
-*/
+        console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring): isRestoring=false -> calling observer.subscribe');
 
         // FIXME this does not update query.status
         // result is in cache but is not loaded
 
         // result is the actual fetch-result
-        unsubscribe = observer.subscribe((result) => {
-            console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: result', result);
+        //unsubscribe = observer.subscribe((result) => {
+        const handleResult = (result) => {
+            console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring) observer.subscribe: result', result);
             taskQueue.push(() => {
                 batch(() => {
-                    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: batch');
+                    console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring) observer.subscribe: batch');
                     const unwrappedResult = { ...unwrap(result) };
                     if (unwrappedResult.data === undefined) {
                         // This is a hack to prevent Solid
@@ -4026,11 +4080,12 @@ useSyncExternalStore(
                         // @ts-ignore
                         unwrappedResult.data = emptyData;
                     }
-                    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: setState');
+                    console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring) observer.subscribe: setState');
+                    // TODO(milahu): why unwrap again?
                     setState(unwrap(unwrappedResult));
-                    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: mutate');
+                    console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring) observer.subscribe: mutate');
                     mutate(() => unwrap(result.data));
-                    console.log('@tanstack/solid-query/build/solid/createBaseQuery.js createComputed(isRestoring) observer.subscribe: refetch');
+                    console.log('@tanstack/solid-query createBaseQuery createComputed(isRestoring) observer.subscribe: refetch');
                     refetch();
                 });
             });
@@ -4041,8 +4096,13 @@ useSyncExternalStore(
                 }
                 taskQueue = [];
             });
-        });
+        };
 
+        // result was restored from cache -> update result
+        handleResult(observer.getCurrentResult());
+
+        // listen for future results
+        observer.subscribe(handleResult);
     });
 //    }));
 
@@ -8163,7 +8223,7 @@ const octokit = new Octokit({
       <GithubFile path="file2"/>
 */
 
-function App() {
+function PersistApp() {
   const persister = createIDBPersister();
   return createComponent(PersistQueryClientProvider, {
     client: queryClient,
@@ -8175,6 +8235,9 @@ function App() {
     }
   });
 }
+
+//const App = NoPersistApp
+const App = PersistApp;
 function GithubFile(props) {
   onMount(() => {
     useQueryClient();
@@ -8250,10 +8313,10 @@ function GithubFile(props) {
     refetchOnReconnect: true
   });
   return (() => {
-    const _el$2 = _tmpl$5.cloneNode(true),
-      _el$3 = _el$2.firstChild,
-      _el$4 = _el$3.nextSibling;
-    insert(_el$4, createComponent(Switch, {
+    const _el$3 = _tmpl$5.cloneNode(true),
+      _el$4 = _el$3.firstChild,
+      _el$5 = _el$4.nextSibling;
+    insert(_el$5, createComponent(Switch, {
       get children() {
         return [createComponent(Match, {
           get when() {
@@ -8265,10 +8328,10 @@ function GithubFile(props) {
             return query.error instanceof Error;
           },
           get children() {
-            const _el$5 = _tmpl$2.cloneNode(true);
-              _el$5.firstChild;
-            insert(_el$5, () => query.error.message, null);
-            return _el$5;
+            const _el$6 = _tmpl$2.cloneNode(true);
+              _el$6.firstChild;
+            insert(_el$6, () => query.error.message, null);
+            return _el$6;
           }
         }), createComponent(Match, {
           get when() {
@@ -8276,24 +8339,27 @@ function GithubFile(props) {
           },
           get children() {
             return [(() => {
-              const _el$7 = _tmpl$3.cloneNode(true),
-                _el$8 = _el$7.firstChild;
-                _el$8.firstChild;
-                const _el$10 = _el$8.nextSibling,
-                _el$11 = _el$10.firstChild;
-              insert(_el$8, () => query.data.headers['x-ratelimit-used'], null);
-              insert(_el$11, () => JSON.stringify(query.data, null, 2));
-              return _el$7;
+              const _el$8 = _tmpl$3.cloneNode(true),
+                _el$9 = _el$8.firstChild;
+                _el$9.firstChild;
+                const _el$11 = _el$9.nextSibling,
+                _el$12 = _el$11.firstChild;
+              insert(_el$9, () => query.data.headers['x-ratelimit-used'], null);
+              insert(_el$12, () => JSON.stringify(query.data, null, 2));
+              return _el$8;
             })(), (() => {
-              const _el$12 = _tmpl$4.cloneNode(true);
-              insert(_el$12, () => query.isFetching ? 'Background Updating...' : ' ');
-              return _el$12;
+              const _el$13 = _tmpl$4.cloneNode(true);
+              insert(_el$13, () => query.isFetching ? 'Background Updating...' : ' ');
+              return _el$13;
             })()];
           }
+        }), createComponent(Match, {
+          when: true,
+          children: "query.data is undefined"
         })];
       }
     }));
-    return _el$2;
+    return _el$3;
   })();
 }
 
