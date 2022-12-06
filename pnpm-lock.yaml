@@ -3,6 +3,7 @@ lockfileVersion: 5.4
 specifiers:
   '@milahu/patch-package': ^6.4.14
   '@octokit/rest': ^19.0.5
+  '@solidjs/router': ^0.5.0
   '@tanstack/query-core': 4.13.0
   '@tanstack/query-persist-client-core': 4.13.0
   '@tanstack/react-query': ^4.13.0
@@ -11,6 +12,7 @@ specifiers:
   idb-keyval: ^6.2.0
   isomorphic-fetch: ^3.0.0
   solid-js: ^1.6.0
+  solid-toast: ^0.3.5
   vite: ^3.1.8
   vite-plugin-solid: ^2.3.10
 
@@ -20,6 +22,7 @@ dependencies:
 devDependencies:
   '@milahu/patch-package': 6.4.14
   '@octokit/rest': 19.0.5
+  '@solidjs/router': 0.5.0_solid-js@1.6.0
   '@tanstack/query-core': 4.13.0
   '@tanstack/query-persist-client-core': 4.13.0_2j3mimmrnvztipmcuhvp72grqa
   '@tanstack/react-query': 4.13.0
@@ -27,6 +30,7 @@ devDependencies:
   '@tanstack/solid-query': 4.13.0_solid-js@1.6.0
   idb-keyval: 6.2.0
   isomorphic-fetch: 3.0.0
+  solid-toast: 0.3.5_solid-js@1.6.0
   vite: 3.1.8
   vite-plugin-solid: 2.3.10_solid-js@1.6.0+vite@3.1.8
 
@@ -537,6 +541,14 @@ packages:
     resolution: {integrity: sha512-65/TPpOJP1i3K4lBJMnWqPUJ6zuOtzhtagDvydAWbEXpbFYA0oMKKyLb95NFZZP0lSh/4b6K+DQlzvYQJQQePg==}
     dependencies:
       '@octokit/openapi-types': 14.0.0
+    dev: true
+
+  /@solidjs/router/0.5.0_solid-js@1.6.0:
+    resolution: {integrity: sha512-rNR07l21tWWDVmCbaapggB89rEX7jlM2XChpTLqEGEnj46LzVZ8zgvjcF6NNKScByAlLpoQUkVIjB2KHpcMi+w==}
+    peerDependencies:
+      solid-js: ^1.5.3
+    dependencies:
+      solid-js: 1.6.0
     dev: true
 
   /@tanstack/query-core/4.13.0:
@@ -1317,6 +1329,14 @@ packages:
       '@babel/generator': 7.19.6
       '@babel/helper-module-imports': 7.18.6
       '@babel/types': 7.19.4
+      solid-js: 1.6.0
+    dev: true
+
+  /solid-toast/0.3.5_solid-js@1.6.0:
+    resolution: {integrity: sha512-m4PX2ESex9nSwt9d9XTr3r+Kp3vjSoViDWj3gj6Xxgz21IKYODMKhACXurlZCztz56NQBnfX2m4es4I8JgXGQQ==}
+    peerDependencies:
+      solid-js: ^1.5.4
+    dependencies:
       solid-js: 1.6.0
     dev: true
 
