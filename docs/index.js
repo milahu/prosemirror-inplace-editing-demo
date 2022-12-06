@@ -799,6 +799,9 @@ function delegateEvents(eventNames, document = window.document) {
     }
   }
 }
+function setAttribute(node, name, value) {
+  if (value == null) node.removeAttribute(name);else node.setAttribute(name, value);
+}
 function addEventListener(node, name, handler, delegate) {
   if (delegate) {
     if (Array.isArray(handler)) {
@@ -1010,8 +1013,58 @@ const App_module = {
 	link: link
 };
 
+const name = "prosemirror-inplace-editing-demo";
+const version = "0.0.0";
+const description = "inplace editable web pages, contribute changes back to github";
+const homepage = "https://github.com/milahu/prosemirror-inplace-editing-demo";
+const scripts = {
+	postinstall: "patch-package",
+	start: "vite",
+	dev: "vite --clearScreen false",
+	devloop: "./scripts/devloop.sh",
+	build: "vite build && touch docs/.nojekyll",
+	serve: "vite preview"
+};
+const license = "MIT";
+const author = "milahu";
+const devDependencies = {
+	"@isomorphic-git/lightning-fs": "^4.6.0",
+	"@milahu/patch-package": "^6.4.14",
+	"@octokit/rest": "^19.0.5",
+	"@solidjs/router": "^0.5.0",
+	"@tanstack/query-core": "4.13.0",
+	"@tanstack/query-persist-client-core": "4.13.0",
+	"@tanstack/react-query": "^4.13.0",
+	"@tanstack/react-query-persist-client": "^4.13.0",
+	"@tanstack/solid-query": "4.13.0",
+	buffer: "^6.0.3",
+	"idb-keyval": "^6.2.0",
+	"isomorphic-fetch": "^3.0.0",
+	"isomorphic-git": "^1.21.0",
+	pify: "^6.1.0",
+	"solid-styled-components": "^0.28.5",
+	"solid-toast": "^0.3.5",
+	vite: "^3.1.8",
+	"vite-plugin-solid": "^2.3.10"
+};
+const dependencies = {
+	"solid-js": "^1.6.0"
+};
+const pkg = {
+	name: name,
+	version: version,
+	description: description,
+	homepage: homepage,
+	scripts: scripts,
+	license: license,
+	author: author,
+	devDependencies: devDependencies,
+	dependencies: dependencies
+};
+
 const _tmpl$ = /*#__PURE__*/template(`<button>edit this page</button>`),
-  _tmpl$2 = /*#__PURE__*/template(`<div>Loading editor ...</div>`);
+  _tmpl$2 = /*#__PURE__*/template(`<div><div>source code: <a></a></div></div>`),
+  _tmpl$3 = /*#__PURE__*/template(`<div>Loading editor ...</div>`);
 console.log("App.jsx: hello");
 
 //import EditMenu from "./EditMenu.jsx";
@@ -1020,32 +1073,41 @@ const EditMenu = lazy(async () => {
 });
 function App() {
   const [isActive, set_isActive] = createSignal(false);
-  return createComponent(Switch, {
-    get children() {
-      return [createComponent(Match, {
-        get when() {
-          return isActive();
-        },
-        get children() {
-          return createComponent(Suspense, {
-            get fallback() {
-              return _tmpl$2.cloneNode(true);
-            },
-            get children() {
-              return createComponent(EditMenu, {});
-            }
-          });
-        }
-      }), createComponent(Match, {
-        when: true,
-        get children() {
-          const _el$ = _tmpl$.cloneNode(true);
-          _el$.$$click = () => set_isActive(true);
-          return _el$;
-        }
-      })];
-    }
-  });
+  return (() => {
+    const _el$ = _tmpl$2.cloneNode(true),
+      _el$2 = _el$.firstChild,
+      _el$3 = _el$2.firstChild,
+      _el$4 = _el$3.nextSibling;
+    insert(_el$4, () => pkg.homepage);
+    insert(_el$, createComponent(Switch, {
+      get children() {
+        return [createComponent(Match, {
+          get when() {
+            return isActive();
+          },
+          get children() {
+            return createComponent(Suspense, {
+              get fallback() {
+                return _tmpl$3.cloneNode(true);
+              },
+              get children() {
+                return createComponent(EditMenu, {});
+              }
+            });
+          }
+        }), createComponent(Match, {
+          when: true,
+          get children() {
+            const _el$5 = _tmpl$.cloneNode(true);
+            _el$5.$$click = () => set_isActive(true);
+            return _el$5;
+          }
+        })];
+      }
+    }), null);
+    createRenderEffect(() => setAttribute(_el$4, "href", pkg.homepage));
+    return _el$;
+  })();
 }
 delegateEvents(["click"]);
 
