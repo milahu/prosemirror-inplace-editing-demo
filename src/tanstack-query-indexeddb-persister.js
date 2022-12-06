@@ -1,5 +1,7 @@
 import { get, set, del } from "idb-keyval";
 
+import { unwrap } from "solid-js/store"
+
 // import type { PersistedClient, Persister } from "@tanstack/react-query-persist-client";
 /** @typedef {import("@tanstack/react-query-persist-client").PersistedClient} PersistedClient */
 /** @typedef {import("@tanstack/react-query-persist-client").Persister} Persister */
@@ -16,6 +18,13 @@ export function createIDBPersister(idbValidKey = "tanstack-query") {
     persistClient: async (/** @type {PersistedClient} */ client) => {
       //console.log('persistClient persistClient: client', client)
       console.log('persistClient persistClient: client.clientState.queries', client.clientState.queries)
+
+      // remove Proxy objects from solidjs
+      for (let i = 0; i < client.clientState.queries.length; i++) {
+        client.clientState.queries[i].queryKey = (
+          unwrap(client.clientState.queries[i].queryKey)
+        )
+      }
 
       /*
       // fix storing in DB, but now we get cache miss
@@ -46,6 +55,16 @@ export function createIDBPersister(idbValidKey = "tanstack-query") {
       console.timeEnd('persistClient restoreClient')
       console.log('🟢 persistClient restoreClient: client.clientState.queries', client.clientState.queries)
       console.log('persistClient restoreClient: client', client)
+
+      /* there is no "wrap" function
+      // add Proxy objects for solidjs
+      for (let i = 0; i < client.clientState.queries.length; i++) {
+        client.clientState.queries[i].queryKey = (
+          wrap(client.clientState.queries[i].queryKey)
+        )
+      }
+      */
+
       return client;
       //return await get(idbValidKey);
     },

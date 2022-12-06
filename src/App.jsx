@@ -39,11 +39,12 @@ const octokit = new Octokit({
 */
 
 function PersistApp() {
-  const persister = createIDBPersister()
   return (
     <PersistQueryClientProvider
         client={queryClient}
-        persister={persister}
+        persistOptions={{
+          persister: createIDBPersister()
+        }}
       >
       <div>
         goal: the "x-ratelimit-used" numbers should stay constant across page reloads.
@@ -157,7 +158,7 @@ function GithubFile(props) {
 
   return (
     <div>
-      <h3>GithubFile</h3>
+      <h3>Main</h3>
       <div>
         <Switch>
           <Match when={query.status === 'loading'}>Loading...</Match>
@@ -166,36 +167,7 @@ function GithubFile(props) {
           </Match>
           <Match when={query.data !== undefined}>
             <>
-              <div>
-                <h4>x-ratelimit-used {(query.data.headers['x-ratelimit-used'])}</h4>
-                <details>
-                  <pre>{JSON.stringify(query.data, null, 2)}</pre>
-                </details>
-                {/*
-                <For each={query.data}>
-                  {(post) => (
-                    <p>
-                      <a
-                        onClick={() => props.setPostId(post.id)}
-                        href="#"
-                        style={
-                          // We can access the query data here to show bold links for
-                          // ones that are cached
-                          queryClient.getQueryData(['post', post.id])
-                            ? {
-                                'font-weight': 'bold',
-                                color: 'green',
-                              }
-                            : {}
-                        }
-                      >
-                        {post.title}
-                      </a>
-                    </p>
-                  )}
-                </For>
-                */}
-              </div>
+              <pre>{JSON.stringify(query.data, null, 2)}</pre>
               <div>{query.isFetching ? 'Background Updating...' : ' '}</div>
             </>
           </Match>
