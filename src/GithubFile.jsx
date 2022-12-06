@@ -1,3 +1,4 @@
+import { onMount, onCleanup } from "solid-js";
 import { QueryClient, QueryClientProvider, createQuery, useQueryClient } from '@tanstack/solid-query'
 
 export function GithubFile(props) {
