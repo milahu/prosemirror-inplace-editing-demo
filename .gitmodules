@@ -1,0 +1,3 @@
+[submodule "src/solidjs-treeview-component"]
+	path = src/solidjs-treeview-component
+	url = https://github.com/milahu/solidjs-treeview-component
