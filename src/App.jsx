@@ -46,10 +46,6 @@ function App() {
           persister: createIDBPersister()
         }}
       >
-      <div>
-        goal: the "x-ratelimit-used" numbers should stay constant across page reloads.
-        this means that the cache is used = no refetching is done
-      </div>
       <GithubFile path="file1" octokit={octokit}/>
     </PersistQueryClientProvider>
   )
