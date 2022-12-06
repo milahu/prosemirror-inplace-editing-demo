@@ -38,7 +38,7 @@ const octokit = new Octokit({
   userAgent: 'milahu/prosemirror-inplace-editing-demo 0.0.0',
 })
 
-function PersistApp() {
+function App() {
   return (
     <PersistQueryClientProvider
         client={queryClient}
@@ -54,20 +54,5 @@ function PersistApp() {
     </PersistQueryClientProvider>
   )
 }
-
-function NoPersistApp() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <div>
-        goal: the "x-ratelimit-used" numbers should stay constant across page reloads.
-        this means that the cache is used = no refetching is done
-      </div>
-      <GithubFile path="file1" octokit={octokit}/>
-    </QueryClientProvider>
-  )
-}
-
-//const App = NoPersistApp
-const App = PersistApp
 
 export default App;
