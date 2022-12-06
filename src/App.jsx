@@ -5,6 +5,8 @@ import styles from './App.module.css';
 
 import { onMount, onCleanup, createSignal, lazy, Suspense } from "solid-js";
 
+import pkg from "../package.json"
+
 //import EditMenu from "./EditMenu.jsx";
 const EditMenu = lazy(async () => {
   return import("./EditMenu.jsx")
@@ -13,7 +15,8 @@ const EditMenu = lazy(async () => {
 function App() {
   const [isActive, set_isActive] = createSignal(false);
   return (
-    <>
+    <div>
+      <div>source code: <a href={pkg.homepage}>{pkg.homepage}</a></div>
       <Switch>
         <Match when={isActive()}>
           <Suspense fallback={<div>Loading editor ...</div>}>
@@ -24,7 +27,7 @@ function App() {
           <button onclick={() => set_isActive(true)}>edit this page</button>
         </Match>
       </Switch>
-    </>
+    </div>
   )
 }
 
